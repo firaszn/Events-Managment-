@@ -80,7 +80,16 @@ public class UserEntity implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return this.enabled;
+    }
+
+    // Getter spécifique pour le champ username (différent de getUsername() de UserDetails)
+    public String getUsernameField() {
+        return this.username;
+    }
+
+    public void setUsernameField(String username) {
+        this.username = username;
     }
 
     public enum Role {

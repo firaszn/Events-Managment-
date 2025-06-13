@@ -85,7 +85,6 @@ public class UserController {
      * POST /api/users - Créer un nouvel utilisateur (ADMIN uniquement)
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest userRequest) {
         log.info("Requête de création d'utilisateur : {}", userRequest.getUsername());
         try {
@@ -106,7 +105,6 @@ public class UserController {
      * PUT /api/users/{id} - Modifier un utilisateur (ADMIN uniquement)
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest updateRequest) {
         log.info("Requête de mise à jour de l'utilisateur avec l'ID : {}", id);
         try {
@@ -168,6 +166,12 @@ public class UserController {
                     log.warn("Tentative de changement d'email vers un email déjà existant : {}", updateRequest.getEmail());
                     return ResponseEntity.badRequest().build();
                 }
+            }
+
+            // Validation supplémentaire pour le password
+            if (updateRequest.getPassword() != null && updateRequest.getPassword().trim().isEmpty()) {
+                log.warn("Tentative de mise à jour avec un mot de passe vide");
+                return ResponseEntity.badRequest().build();
             }
 
             userMapper.updateUserEntity(currentUser, updateRequest);

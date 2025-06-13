@@ -39,7 +39,8 @@ public class AuthenticationService {
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(UserEntity.Role.USER)
+                .phoneNumber(request.getPhoneNumber())
+                .role(request.getRole() != null ? request.getRole() : UserEntity.Role.USER)
                 .build();
 
         // Save user to repository
@@ -171,7 +172,7 @@ public class AuthenticationService {
 
             claims.put("email_verified", true);
             claims.put("name", user.getFirstName() + " " + user.getLastName());
-            claims.put("preferred_username", user.getUsername());
+            claims.put("preferred_username", user.getUsernameField());
             claims.put("given_name", user.getFirstName());
             claims.put("family_name", user.getLastName());
             claims.put("email", user.getEmail());

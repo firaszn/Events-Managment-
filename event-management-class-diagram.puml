@@ -1,0 +1,179 @@
+@startuml Event Management - Entités Principales
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #6C757D
+skinparam packageBackgroundColor #E9ECEF
+skinparam packageBorderColor #495057
+
+title Application d'Organisation d'Événements - Entités Principales
+
+' ===== USER SERVICE =====
+package "User Service (Port 8084)" as UserService {
+
+    class UserEntity {
+        - Long id
+        - String firstName
+        - String lastName
+        - String email {unique}
+        - String password
+        - String username
+        - String phoneNumber
+        - boolean enabled
+        - Role role
+        - LocalDateTime createdAt
+        - LocalDateTime updatedAt
+        - String resetToken
+        - Date tokenExpiration
+    }
+
+    enum Role {
+        USER
+        ADMIN
+    }
+}
+
+' ===== EVENT SERVICE =====
+package "Event Service (Port 8082)" as EventService {
+
+    class EventEntity {
+        - Long id
+        - String title
+        - String description
+        - String location
+        - LocalDateTime dateTime
+        - Long organizerId
+        - LocalDateTime createdAt
+        - LocalDateTime updatedAt
+    }
+}
+
+' ===== INVITATION SERVICE =====
+package "Invitation Service (Port 8083)" as InvitationService {
+
+    class Invitation {
+        - Long id
+        - Long eventId
+        - Long userId
+        - InvitationStatus status
+        - LocalDateTime invitedAt
+        - LocalDateTime respondedAt
+        - LocalDateTime createdAt
+        - LocalDateTime updatedAt
+    }
+
+    enum InvitationStatus {
+        PENDING("En attente")
+        ACCEPTED("Acceptée")
+        DECLINED("Refusée")
+    }
+}
+
+' ===== NOTIFICATION SERVICE =====
+package "Notification Service (Port 8085)" as NotificationService {
+
+    class NotificationEntity {
+        - Long id
+        - String recipient
+        - String subject
+        - String message
+        - NotificationType type
+        - NotificationStatus status
+        - String eventData
+        - LocalDateTime scheduledAt
+        - LocalDateTime sentAt
+        - LocalDateTime createdAt
+        - int retryCount
+        - String errorMessage
+    }
+
+    enum NotificationType {
+        EVENT_CREATED
+        EVENT_UPDATED
+        EVENT_REMINDER
+        INVITATION_SENT
+        INVITATION_ACCEPTED
+        INVITATION_DECLINED
+        EVENT_CANCELLED
+    }
+
+    enum NotificationStatus {
+        PENDING
+        SENT
+        FAILED
+        CANCELLED
+    }
+}
+
+' ===== SCHEDULER SERVICE =====
+package "Scheduler Service (Port 8086)" as SchedulerService {
+
+    class EventReminderMessage {
+        - Long eventId
+        - String eventTitle
+        - LocalDateTime eventDateTime
+        - List<String> participantEmails
+        - String organizerEmail
+    }
+}
+
+' ===== KAFKA TOPICS =====
+package "Kafka Topics" as KafkaTopics {
+
+    class EventCreatedTopic {
+        + topic: "event.created"
+        + payload: EventEntity
+    }
+
+    class EventUpdatedTopic {
+        + topic: "event.updated"
+        + payload: EventEntity
+    }
+
+    class InvitationRespondedTopic {
+        + topic: "invitation.responded"
+        + payload: Invitation
+    }
+
+    class EventReminderTopic {
+        + topic: "event.reminder"
+        + payload: EventReminderMessage
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+' Entity Relations
+UserEntity ||--|| Role
+Invitation ||--|| InvitationStatus
+NotificationEntity ||--|| NotificationType
+NotificationEntity ||--|| NotificationStatus
+
+' Business Relations
+EventEntity ||--o{ Invitation : "1 événement\nN invitations"
+UserEntity ||--o{ EventEntity : "1 organisateur\nN événements"
+UserEntity ||--o{ Invitation : "1 utilisateur\nN invitations"
+UserEntity ||--o{ NotificationEntity : "1 destinataire\nN notifications"
+
+' Kafka Relations
+EventEntity --> EventCreatedTopic : "publié lors\nde la création"
+EventEntity --> EventUpdatedTopic : "publié lors\nde la modification"
+Invitation --> InvitationRespondedTopic : "publié lors\nde la réponse"
+EventReminderMessage --> EventReminderTopic : "publié par\nle scheduler"
+
+EventCreatedTopic --> NotificationEntity : "consommé pour\ncréer notification"
+EventUpdatedTopic --> NotificationEntity : "consommé pour\ncréer notification"
+InvitationRespondedTopic --> NotificationEntity : "consommé pour\ncréer notification"
+EventReminderTopic --> NotificationEntity : "consommé pour\ncréer rappel"
+
+' Notes
+note top of UserEntity : Utilisateurs du système\n(organisateurs + participants)
+note top of EventEntity : Événements créés\n(réunions, conférences...)
+note top of Invitation : Invitations aux événements\navec statut de réponse
+note top of NotificationEntity : Notifications envoyées\n(email, rappels...)
+note top of EventReminderMessage : Messages de rappel\n24h avant événement
+
+note bottom of KafkaTopics : Communication asynchrone\nentre microservices
+
+@enduml

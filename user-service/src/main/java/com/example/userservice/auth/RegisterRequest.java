@@ -15,5 +15,6 @@ public class RegisterRequest {
     private String lastName;
     private String email;
     private String password;
+    private String phoneNumber;
     private UserEntity.Role role; // Add role field
 }

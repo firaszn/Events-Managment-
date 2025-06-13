@@ -2,7 +2,6 @@ package com.example.userservice.service;
 
 import com.example.userservice.entity.UserEntity;
 import com.example.userservice.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,7 +16,6 @@ public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -55,8 +53,8 @@ public class UserService implements UserDetailsService {
         }
 
         // Vérifier si le username existe déjà (si applicable)
-        if (user.getUsername() != null && userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new IllegalStateException("Username already exists: " + user.getUsername());
+        if (user.getUsernameField() != null && userRepository.findByUsername(user.getUsernameField()).isPresent()) {
+            throw new IllegalStateException("Username already exists: " + user.getUsernameField());
         }
 
         // Encoder le mot de passe
@@ -66,7 +64,7 @@ public class UserService implements UserDetailsService {
         if (user.getRole() == null) {
             user.setRole(UserEntity.Role.USER);
         }
-
+        // Le champ enabled est déjà initialisé à true par défaut dans l'entité
 
         return userRepository.save(user);
     }
@@ -106,7 +104,8 @@ public class UserService implements UserDetailsService {
             }
             existingUser.setEmail(updatedUser.getEmail());
         }
-        if (updatedUser.getPassword() != null) {
+        // ✅ INTÉGRATION : Encoder le password si fourni dans UserUpdateRequest
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().trim().isEmpty()) {
             existingUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
         }
 

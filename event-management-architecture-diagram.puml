@@ -1,0 +1,201 @@
+@startuml Event Management - Architecture Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentBackgroundColor #F8F9FA
+skinparam componentBorderColor #6C757D
+skinparam packageBackgroundColor #E9ECEF
+skinparam packageBorderColor #495057
+
+title Application d'Organisation d'Événements - Architecture Microservices
+
+' ===== FRONTEND =====
+package "Frontend (Angular)" as Frontend {
+    component [Event Management UI] as UI
+    component [Authentication] as Auth
+    component [Event Dashboard] as Dashboard
+    component [Invitation Manager] as InvitationUI
+    component [Notification Center] as NotifUI
+}
+
+' ===== API GATEWAY =====
+package "API Gateway (Port 8080)" as Gateway {
+    component [Spring Cloud Gateway] as GW
+    component [Load Balancer] as LB
+    component [Security Filter] as Security
+    component [Rate Limiting] as RateLimit
+}
+
+' ===== SERVICE DISCOVERY =====
+package "Service Discovery" as Discovery {
+    component [Eureka Server\n(Port 8761)] as Eureka
+    component [Config Server\n(Port 8888)] as Config
+}
+
+' ===== MICROSERVICES =====
+package "Microservices" as Services {
+    
+    package "User Service (Port 8084)" as UserMS {
+        component [User Controller] as UserCtrl
+        component [Authentication Service] as AuthSvc
+        component [User Repository] as UserRepo
+        database [UserDB\n(PostgreSQL)] as UserDB
+    }
+    
+    package "Event Service (Port 8082)" as EventMS {
+        component [Event Controller] as EventCtrl
+        component [Event Service] as EventSvc
+        component [Event Repository] as EventRepo
+        component [Kafka Producer] as EventProducer
+        database [EventDB\n(PostgreSQL)] as EventDB
+    }
+    
+    package "Invitation Service (Port 8083)" as InvitationMS {
+        component [Invitation Controller] as InvitationCtrl
+        component [Invitation Service] as InvitationSvc
+        component [Invitation Repository] as InvitationRepo
+        component [Kafka Producer] as InvitationProducer
+        database [InvitationDB\n(PostgreSQL)] as InvitationDB
+    }
+    
+    package "Notification Service (Port 8085)" as NotificationMS {
+        component [Notification Controller] as NotificationCtrl
+        component [Notification Service] as NotificationSvc
+        component [Email Service] as EmailSvc
+        component [Kafka Consumer] as NotificationConsumer
+        component [Notification Repository] as NotificationRepo
+        database [NotificationDB\n(PostgreSQL)] as NotificationDB
+    }
+    
+    package "Scheduler Service (Port 8086)" as SchedulerMS {
+        component [Scheduled Tasks] as ScheduledTasks
+        component [Reminder Service] as ReminderSvc
+        component [Kafka Producer] as SchedulerProducer
+    }
+}
+
+' ===== MESSAGE BROKER =====
+package "Message Broker" as MessageBroker {
+    component [Apache Kafka\n(Port 9092)] as Kafka
+    
+    package "Topics" as Topics {
+        component [event.created] as TopicEventCreated
+        component [event.updated] as TopicEventUpdated
+        component [invitation.responded] as TopicInvitationResponded
+        component [event.reminder] as TopicEventReminder
+        component [event.cancelled] as TopicEventCancelled
+    }
+}
+
+' ===== EXTERNAL SERVICES =====
+package "External Services" as External {
+    component [SMTP Server] as SMTP
+    component [Google OAuth] as GoogleAuth
+    component [Keycloak] as Keycloak
+}
+
+' ===== MONITORING =====
+package "Monitoring & Logging" as Monitoring {
+    component [Spring Boot Actuator] as Actuator
+    component [Micrometer] as Metrics
+    component [Logback] as Logging
+}
+
+' ===== CONNECTIONS =====
+
+' Frontend to Gateway
+UI --> GW : HTTP/REST
+Auth --> GW : Authentication
+Dashboard --> GW : API Calls
+InvitationUI --> GW : API Calls
+NotifUI --> GW : API Calls
+
+' Gateway to Services
+GW --> UserCtrl : /api/users/**
+GW --> EventCtrl : /api/events/**
+GW --> InvitationCtrl : /api/invitations/**
+GW --> NotificationCtrl : /api/notifications/**
+
+' Service Discovery
+GW --> Eureka : Service Registration
+UserMS --> Eureka : Service Registration
+EventMS --> Eureka : Service Registration
+InvitationMS --> Eureka : Service Registration
+NotificationMS --> Eureka : Service Registration
+SchedulerMS --> Eureka : Service Registration
+
+GW --> Config : Configuration
+UserMS --> Config : Configuration
+EventMS --> Config : Configuration
+InvitationMS --> Config : Configuration
+NotificationMS --> Config : Configuration
+SchedulerMS --> Config : Configuration
+
+' Internal Service Connections
+UserCtrl --> AuthSvc
+AuthSvc --> UserRepo
+UserRepo --> UserDB
+
+EventCtrl --> EventSvc
+EventSvc --> EventRepo
+EventRepo --> EventDB
+EventSvc --> EventProducer
+
+InvitationCtrl --> InvitationSvc
+InvitationSvc --> InvitationRepo
+InvitationRepo --> InvitationDB
+InvitationSvc --> InvitationProducer
+
+NotificationCtrl --> NotificationSvc
+NotificationSvc --> EmailSvc
+NotificationSvc --> NotificationRepo
+NotificationRepo --> NotificationDB
+NotificationConsumer --> NotificationSvc
+
+ScheduledTasks --> ReminderSvc
+ReminderSvc --> SchedulerProducer
+
+' Kafka Connections
+EventProducer --> TopicEventCreated
+EventProducer --> TopicEventUpdated
+EventProducer --> TopicEventCancelled
+InvitationProducer --> TopicInvitationResponded
+SchedulerProducer --> TopicEventReminder
+
+TopicEventCreated --> NotificationConsumer
+TopicEventUpdated --> NotificationConsumer
+TopicInvitationResponded --> NotificationConsumer
+TopicEventReminder --> NotificationConsumer
+TopicEventCancelled --> NotificationConsumer
+
+' External Services
+EmailSvc --> SMTP : Send Emails
+AuthSvc --> GoogleAuth : OAuth2
+AuthSvc --> Keycloak : JWT Validation
+
+' Monitoring
+UserMS --> Actuator
+EventMS --> Actuator
+InvitationMS --> Actuator
+NotificationMS --> Actuator
+SchedulerMS --> Actuator
+
+' Notes
+note top of Gateway : Point d'entrée unique\nRoutage et sécurité
+note top of Kafka : Messaging asynchrone\nDécouplage des services
+note top of Eureka : Découverte de services\nLoad balancing
+note top of NotificationMS : Consommateur Kafka\nNotifications email
+note top of SchedulerMS : Tâches programmées\nRappels automatiques
+
+' Styling
+skinparam component {
+    BackgroundColor<<database>> #FFE6E6
+    BorderColor<<database>> #FF9999
+}
+
+UserDB <<database>>
+EventDB <<database>>
+InvitationDB <<database>>
+NotificationDB <<database>>
+
+@enduml

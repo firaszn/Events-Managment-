@@ -25,7 +25,7 @@ public class UserMapper {
         
         return new UserResponse(
             entity.getId(),
-            entity.getUsername(),
+            entity.getUsernameField(),
             entity.getEmail(),
             entity.getFirstName(),
             entity.getLastName(),
@@ -47,7 +47,7 @@ public class UserMapper {
         
         return new UserDTO(
             entity.getId(),
-            entity.getUsername(),
+            entity.getUsernameField(),
             entity.getEmail(),
             entity.getFirstName(),
             entity.getLastName(),
@@ -68,7 +68,7 @@ public class UserMapper {
         }
         
         UserEntity entity = new UserEntity();
-        entity.setUsername(request.getUsername());
+        entity.setUsernameField(request.getUsername());
         entity.setEmail(request.getEmail());
         entity.setPassword(request.getPassword()); // Sera hashé dans le service
         entity.setFirstName(request.getFirstName());
@@ -89,13 +89,17 @@ public class UserMapper {
         if (entity == null || request == null) {
             return;
         }
-        
+
         if (request.getUsername() != null) {
-            entity.setUsername(request.getUsername());
+            entity.setUsernameField(request.getUsername());
         }
         if (request.getEmail() != null) {
             entity.setEmail(request.getEmail());
         }
+        if (request.getPassword() != null) {
+            entity.setPassword(request.getPassword()); // Sera encodé dans le service
+        }
+
         if (request.getFirstName() != null) {
             entity.setFirstName(request.getFirstName());
         }
@@ -111,7 +115,7 @@ public class UserMapper {
         if (request.getEnabled() != null) {
             entity.setEnabled(request.getEnabled());
         }
-        
+
         entity.setUpdatedAt(LocalDateTime.now());
     }
 

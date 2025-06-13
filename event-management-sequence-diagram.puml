@@ -1,0 +1,128 @@
+@startuml Event Management - Sequence Diagrams
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participantBackgroundColor #F8F9FA
+skinparam participantBorderColor #6C757D
+
+title Application d'Organisation d'Événements - Flux Principaux
+
+actor Organisateur as org
+actor Participant as part
+participant "API Gateway" as gateway
+participant "User Service" as user
+participant "Event Service" as event
+participant "Invitation Service" as invitation
+participant "Notification Service" as notification
+participant "Scheduler Service" as scheduler
+participant "Kafka" as kafka
+participant "Email Service" as email
+database "PostgreSQL" as db
+
+== 1. Création d'un Événement ==
+
+org -> gateway : POST /api/events
+gateway -> event : POST /events
+event -> db : save(EventEntity)
+db -> event : EventEntity saved
+event -> kafka : publish("event.created", EventEntity)
+event -> gateway : EventResponse
+gateway -> org : 201 Created
+
+kafka -> notification : consume("event.created")
+notification -> user : getUsersByRole(PARTICIPANT)
+user -> notification : List<UserEntity>
+notification -> email : sendEventCreatedEmail()
+email -> part : 📧 Nouvel événement créé
+
+== 2. Invitation de Participants ==
+
+org -> gateway : POST /api/invitations
+gateway -> invitation : POST /invitations
+invitation -> db : save(Invitation)
+db -> invitation : Invitation saved
+invitation -> kafka : publish("invitation.responded", Invitation)
+invitation -> gateway : InvitationResponse
+gateway -> org : 201 Created
+
+kafka -> notification : consume("invitation.responded")
+notification -> user : getUserById(userId)
+user -> notification : UserEntity
+notification -> event : getEventById(eventId)
+event -> notification : EventEntity
+notification -> email : sendInvitationEmail()
+email -> part : 📧 Invitation à l'événement
+
+== 3. Réponse à une Invitation ==
+
+part -> gateway : PUT /api/invitations/{id}/accept
+gateway -> invitation : PUT /invitations/{id}/accept
+invitation -> db : updateStatus(ACCEPTED)
+db -> invitation : Invitation updated
+invitation -> kafka : publish("invitation.responded", Invitation)
+invitation -> gateway : InvitationResponse
+gateway -> part : 200 OK
+
+kafka -> notification : consume("invitation.responded")
+notification -> user : getUserById(organizerId)
+user -> notification : UserEntity (organizer)
+notification -> email : sendAcceptanceEmail()
+email -> org : 📧 Participant a accepté
+
+== 4. Modification d'un Événement ==
+
+org -> gateway : PUT /api/events/{id}
+gateway -> event : PUT /events/{id}
+event -> db : update(EventEntity)
+db -> event : EventEntity updated
+event -> kafka : publish("event.updated", EventEntity)
+event -> gateway : EventResponse
+gateway -> org : 200 OK
+
+kafka -> notification : consume("event.updated")
+notification -> invitation : getInvitationsByEvent(eventId)
+invitation -> notification : List<Invitation>
+notification -> user : getUsersByIds(userIds)
+user -> notification : List<UserEntity>
+notification -> email : sendEventUpdatedEmail()
+email -> part : 📧 Événement modifié
+
+== 5. Rappel Automatique 24h Avant ==
+
+scheduler -> scheduler : @Scheduled checkUpcomingEvents()
+scheduler -> event : getEventsIn24Hours()
+event -> scheduler : List<EventEntity>
+
+loop Pour chaque événement
+    scheduler -> invitation : getAcceptedInvitations(eventId)
+    invitation -> scheduler : List<Invitation>
+    scheduler -> user : getUsersByIds(userIds)
+    user -> scheduler : List<UserEntity>
+    scheduler -> kafka : publish("event.reminder", EventReminderMessage)
+end
+
+kafka -> notification : consume("event.reminder")
+notification -> email : sendReminderEmail()
+email -> part : 📧 Rappel événement demain
+email -> org : 📧 Rappel événement demain
+
+== 6. Annulation d'un Événement ==
+
+org -> gateway : DELETE /api/events/{id}
+gateway -> event : DELETE /events/{id}
+event -> invitation : cancelInvitationsByEvent(eventId)
+invitation -> db : updateStatus(CANCELLED)
+event -> db : delete(EventEntity)
+event -> kafka : publish("event.cancelled", EventEntity)
+event -> gateway : 204 No Content
+gateway -> org : 204 No Content
+
+kafka -> notification : consume("event.cancelled")
+notification -> invitation : getInvitationsByEvent(eventId)
+invitation -> notification : List<Invitation>
+notification -> user : getUsersByIds(userIds)
+user -> notification : List<UserEntity>
+notification -> email : sendCancellationEmail()
+email -> part : 📧 Événement annulé
+
+@enduml

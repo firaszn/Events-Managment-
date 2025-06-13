@@ -51,10 +51,6 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> {
                 System.out.println("Configuring authorization rules");
                 authorize
-                    .requestMatchers("/auth/welcome").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
-
-                        .requestMatchers("/auth/hello").permitAll()
                     .requestMatchers("/auth/register").permitAll()
                     .requestMatchers("/auth/login").permitAll()
                     .requestMatchers("/auth/google").permitAll()

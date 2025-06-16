@@ -32,7 +32,10 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
             System.out.println("Realm roles found: " + realmRoles);
 
             realmRoles.forEach(roleName -> {
-                if (roleName.equalsIgnoreCase("ADMIN")) {
+                // Ajouter tous les rôles pertinents (ADMIN, USER, etc.)
+                if (roleName.equalsIgnoreCase("ADMIN") ||
+                    roleName.equalsIgnoreCase("USER") ||
+                    roleName.equalsIgnoreCase("MANAGER")) {
                     addRoleWithBothFormats(authorities, roleName);
                 }
             });

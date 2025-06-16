@@ -38,6 +38,13 @@
             <version>${keycloak.version}</version>
         </dependency>
 
+        <!-- JAX-RS API pour Keycloak -->
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.1.1</version>
+        </dependency>
+
         <!-- Spring Boot Starters spécifiques -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

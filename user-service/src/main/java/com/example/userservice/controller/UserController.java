@@ -5,6 +5,7 @@ import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.model.*;
 import com.example.userservice.service.UserService;
 import com.example.userservice.service.PDFService;
+import com.example.userservice.service.KeycloakUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,17 +44,25 @@ public class UserController {
     private final UserService userService;
     private final PDFService pdfService;
     private final UserMapper userMapper;
+    private final KeycloakUserService keycloakUserService;
 
     /**
      * GET /api/users - Récupérer tous les utilisateurs (ADMIN uniquement)
+     * Accepte les tokens JWT Keycloak
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        log.info("Requête de récupération de tous les utilisateurs");
+    public ResponseEntity<List<UserResponse>> getAllUsers(Authentication authentication) {
+        log.info("Requête de récupération de tous les utilisateurs avec token Keycloak");
         try {
-            List<UserEntity> users = userService.getAllUsers();
+            // Vérifier le rôle ADMIN depuis le token Keycloak
+            if (!keycloakUserService.isCurrentUserAdmin(authentication)) {
+                log.warn("Accès refusé - rôle ADMIN requis");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            List<UserEntity> users = keycloakUserService.getAllUsers();
             List<UserResponse> userResponses = userMapper.toUserResponseList(users);
+            log.info("Récupération de {} utilisateurs", users.size());
             return ResponseEntity.ok(userResponses);
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des utilisateurs", e);
@@ -128,17 +137,15 @@ public class UserController {
 
     /**
      * GET /api/users/profile - Récupérer le profil de l'utilisateur connecté
+     * Accepte les tokens JWT Keycloak
      */
     @GetMapping("/profile")
-    public ResponseEntity<UserResponse> getCurrentUser() {
-        log.info("Requête de récupération du profil utilisateur");
+    public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
+        log.info("Requête de récupération du profil utilisateur avec token Keycloak");
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            UserEntity user = userService.findByEmail(auth.getName());
-            if (user == null) {
-                return ResponseEntity.notFound().build();
-            }
+            UserEntity user = keycloakUserService.getCurrentUserFromToken(authentication);
             UserResponse userResponse = userMapper.toUserResponse(user);
+            log.info("Profil récupéré pour l'utilisateur: {}", user.getEmail());
             return ResponseEntity.ok(userResponse);
         } catch (Exception e) {
             log.error("Erreur lors de la récupération du profil utilisateur", e);
@@ -148,25 +155,14 @@ public class UserController {
 
     /**
      * PUT /api/users/profile - Modifier le profil de l'utilisateur connecté
+     * Accepte les tokens JWT Keycloak et synchronise avec Keycloak
      */
     @PutMapping("/profile")
-    public ResponseEntity<UserResponse> updateProfile(@Valid @RequestBody UserUpdateRequest updateRequest) {
-        log.info("Requête de mise à jour du profil utilisateur");
+    public ResponseEntity<UserResponse> updateProfile(@Valid @RequestBody UserUpdateRequest updateRequest,
+                                                     Authentication authentication) {
+        log.info("Requête de mise à jour du profil utilisateur avec token Keycloak");
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            UserEntity currentUser = userService.findByEmail(auth.getName());
-
-            if (currentUser == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // Vérifier si l'utilisateur essaie de changer son email vers un email existant
-            if (updateRequest.getEmail() != null && !updateRequest.getEmail().equals(currentUser.getEmail())) {
-                if (userService.findByEmail(updateRequest.getEmail()) != null) {
-                    log.warn("Tentative de changement d'email vers un email déjà existant : {}", updateRequest.getEmail());
-                    return ResponseEntity.badRequest().build();
-                }
-            }
+            UserEntity currentUser = keycloakUserService.getCurrentUserFromToken(authentication);
 
             // Validation supplémentaire pour le password
             if (updateRequest.getPassword() != null && updateRequest.getPassword().trim().isEmpty()) {
@@ -174,9 +170,18 @@ public class UserController {
                 return ResponseEntity.badRequest().build();
             }
 
-            userMapper.updateUserEntity(currentUser, updateRequest);
-            UserEntity updatedUser = userService.updateUser(currentUser.getId(), currentUser);
+            // Mettre à jour dans Keycloak ET PostgreSQL
+            UserEntity updatedUser = keycloakUserService.updateUserProfile(
+                    currentUser,
+                    updateRequest.getFirstName(),
+                    updateRequest.getLastName(),
+                    updateRequest.getEmail(),
+                    updateRequest.getPhoneNumber(),
+                    updateRequest.getPassword() // Ajouter le mot de passe
+            );
+
             UserResponse userResponse = userMapper.toUserResponse(updatedUser);
+            log.info("Profil mis à jour avec succès pour l'utilisateur: {}", updatedUser.getEmail());
             return ResponseEntity.ok(userResponse);
         } catch (IllegalStateException e) {
             log.warn("Erreur de validation lors de la mise à jour du profil : {}", e.getMessage());
@@ -221,13 +226,21 @@ public class UserController {
 
     /**
      * DELETE /api/users/{id} - Supprimer un utilisateur (ADMIN uniquement)
+     * Accepte les tokens JWT Keycloak et supprime de Keycloak ET PostgreSQL
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        log.info("Requête de suppression de l'utilisateur avec l'ID : {}", id);
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id, Authentication authentication) {
+        log.info("Requête de suppression de l'utilisateur avec l'ID : {} avec token Keycloak", id);
         try {
-            userService.deleteUser(id);
+            // Vérifier le rôle ADMIN depuis le token Keycloak
+            if (!keycloakUserService.isCurrentUserAdmin(authentication)) {
+                log.warn("Accès refusé - rôle ADMIN requis pour supprimer l'utilisateur {}", id);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // Supprimer de Keycloak ET PostgreSQL
+            keycloakUserService.deleteUser(id);
+            log.info("Utilisateur {} supprimé avec succès des deux systèmes", id);
             return ResponseEntity.noContent().build();
         } catch (IllegalStateException e) {
             log.warn("Erreur lors de la suppression de l'utilisateur avec l'ID : {} - {}", id, e.getMessage());

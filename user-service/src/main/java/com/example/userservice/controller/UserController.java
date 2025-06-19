@@ -4,7 +4,6 @@ import com.example.userservice.entity.UserEntity;
 import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.model.*;
 import com.example.userservice.service.UserService;
-import com.example.userservice.service.PDFService;
 import com.example.userservice.service.KeycloakUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +41,6 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-    private final PDFService pdfService;
     private final UserMapper userMapper;
     private final KeycloakUserService keycloakUserService;
 
@@ -254,23 +252,5 @@ public class UserController {
     /**
      * GET /api/users/download-pdf - Télécharger la liste des utilisateurs en PDF (ADMIN uniquement)
      */
-    @GetMapping("/download-pdf")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<byte[]> downloadUsersPDF() {
-        log.info("Requête de téléchargement du PDF des utilisateurs");
-        try {
-            List<UserEntity> users = userService.getAllUsers();
-            byte[] pdfBytes = pdfService.generateUsersPDF(users);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "users-list.pdf");
-            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-
-            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
-        } catch (Exception e) {
-            log.error("Erreur lors de la génération du PDF des utilisateurs", e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
 }

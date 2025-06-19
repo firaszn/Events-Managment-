@@ -32,6 +32,5 @@ public class EventRequest {
     @NotNull(message = "La date et l'heure sont obligatoires")
     private LocalDateTime dateTime;
 
-    @NotNull(message = "L'ID de l'organisateur est obligatoire")
-    private Long organizerId;
+    // L'organisateur est toujours l'admin, pas besoin de le spécifier dans la requête
 }

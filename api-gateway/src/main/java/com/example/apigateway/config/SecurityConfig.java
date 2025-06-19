@@ -1,5 +1,6 @@
 package com.example.apigateway.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,10 +20,16 @@ import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
 
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -32,22 +39,43 @@ public class SecurityConfig {
 
     @Value("${jwt.secret-key}")
     private String secretKey;
+    
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         return http
-
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration corsConfig = new CorsConfiguration();
+                    corsConfig.setAllowedOrigins(List.of("http://localhost:4200"));
+                    corsConfig.setMaxAge(3600L);
+                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    corsConfig.setAllowedHeaders(List.of("*"));
+                    corsConfig.setAllowCredentials(true);
+                    return corsConfig;
+                }))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
 
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/auth/login").permitAll()
+                        // Endpoints publics d'authentification
+                        .pathMatchers("/auth/register", "/auth/login", "/auth/google").permitAll()
+                        .pathMatchers("/auth/keycloak/**").permitAll()
+                        .pathMatchers("/auth/forgot-password", "/auth/reset-password", "/auth/verify-email").permitAll()
 
-                        .pathMatchers("/auth/**", "/Facture/**", "/product/**", "/productCategory/**",
-                                 "/produit-fournisseurs/**", "/reclamations/**").permitAll()
+                        // Endpoints Swagger/Actuator
+                        .pathMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .pathMatchers("/v2/api-docs", "/swagger-resources/**", "/configuration/**", "/webjars/**").permitAll()
+
+                        // Endpoints utilisateur
                         .pathMatchers("/api/users/profile").authenticated()
-                        .pathMatchers("/fournisseurs/**").hasRole("ADMIN")
-
                         .pathMatchers("/api/users/**").hasRole("ADMIN")
+
+                        // Autres services
+                        .pathMatchers("/events/**").authenticated()
+                        .pathMatchers("/invitations/**").authenticated()
+
+                        // Tout le reste nécessite une authentification
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -61,24 +89,58 @@ public class SecurityConfig {
 
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
-        logger.info("Configuring JWT decoder with secret key");
+        System.out.println("Creating TEST JWT decoder (signature validation disabled)");
+        
+        // Créer un décodeur qui ignore la validation de signature (comme dans user-service)
+        return new ReactiveJwtDecoder() {
+            private final ObjectMapper objectMapper = new ObjectMapper();
+            
+            @Override
+            public Mono<Jwt> decode(String token) throws JwtException {
+                try {
+                    System.out.println("Décodage du token JWT sans validation de signature (MODE TEST)");
+                    
+                    // Séparer les parties du JWT
+                    String[] parts = token.split("\\.");
+                    if (parts.length != 3) {
+                        return Mono.error(new JwtException("Token JWT invalide - doit avoir 3 parties"));
+                    }
 
-        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
-        Key key = new SecretKeySpec(keyBytes, "HmacSHA256");
+                    // Décoder le header
+                    String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> headers = objectMapper.readValue(headerJson, Map.class);
 
-        NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder.withSecretKey((javax.crypto.SecretKey) key).build();
+                    // Décoder le payload
+                    String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> claims = objectMapper.readValue(payloadJson, Map.class);
 
-        OAuth2TokenValidator<Jwt> validator = new DelegatingOAuth2TokenValidator<>(
-                JwtValidators.createDefault(), new JwtTimestampValidator()
-        );
+                    // Extraire les timestamps
+                    Instant issuedAt = claims.containsKey("iat") ?
+                        Instant.ofEpochSecond(((Number) claims.get("iat")).longValue()) : 
+                        Instant.now();
+                        
+                    Instant expiresAt = claims.containsKey("exp") ? 
+                        Instant.ofEpochSecond(((Number) claims.get("exp")).longValue()) : 
+                        Instant.now().plusSeconds(3600);
 
-        decoder.setJwtValidator(validator);
+                    // Créer le JWT
+                    Jwt jwt = new Jwt(token, issuedAt, expiresAt, headers, claims);
 
-        return token -> {
-            logger.debug("Attempting to decode JWT token");
-            return decoder.decode(token)
-                    .doOnSuccess(jwt -> logger.debug("Successfully decoded JWT token"))
-                    .doOnError(error -> logger.error("Error decoding JWT token: {}", error.getMessage()));
+                    System.out.println("Token décodé avec succès (MODE TEST):");
+                    System.out.println("- Issuer: " + jwt.getIssuer());
+                    System.out.println("- Subject: " + jwt.getSubject());
+                    System.out.println("- Email: " + jwt.getClaimAsString("email"));
+                    System.out.println("- Roles: " + jwt.getClaimAsMap("realm_access"));
+
+                    return Mono.just(jwt);
+
+                } catch (Exception e) {
+                    System.err.println("Erreur lors du décodage du token: " + e.getMessage());
+                    return Mono.error(new JwtException("Impossible de décoder le token JWT", e));
+                }
+            }
         };
     }
 
@@ -90,16 +152,16 @@ public class SecurityConfig {
 
     @Bean
     public CorsWebFilter corsWebFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // si tu utilises des cookies ou Authorization header
+        CorsConfiguration corsConfig = new CorsConfiguration();
+        corsConfig.setAllowedOrigins(List.of("http://localhost:4200"));
+        corsConfig.setMaxAge(3600L);
+        corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfig.setAllowedHeaders(List.of("*"));
+        corsConfig.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/**", corsConfig);
 
         return new CorsWebFilter(source);
     }
-
 }

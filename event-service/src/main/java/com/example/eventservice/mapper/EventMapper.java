@@ -68,7 +68,7 @@ public class EventMapper {
         entity.setDescription(request.getDescription());
         entity.setLocation(request.getLocation());
         entity.setDateTime(request.getDateTime());
-        entity.setOrganizerId(request.getOrganizerId());
+        // L'organizerId sera défini par le contrôleur
         
         return entity;
     }

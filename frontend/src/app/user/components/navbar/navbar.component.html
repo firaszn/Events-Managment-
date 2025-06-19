@@ -1,0 +1,52 @@
+<mat-toolbar color="primary" class="main-toolbar">
+    <div class="toolbar-content">
+      <!-- Logo / Nom de l'application -->
+      <div class="app-logo" routerLink="/home">
+        <span>Gestion evenements</span>
+      </div>
+
+      <!-- Liens de navigation -->
+      <nav class="nav-links" *ngIf="isLoggedIn">
+        <a mat-button routerLink="/home" routerLinkActive="active">
+          <span>Accueil</span>
+        </a>
+        <a mat-button routerLink="/events" routerLinkActive="active">
+          <span>Événements</span>
+        </a>
+        <a mat-button routerLink="/profile" routerLinkActive="active" *ngIf="userProfile">
+          <span>Profil</span>
+        </a>
+      </nav>
+
+      <!-- Section utilisateur -->
+      <div class="user-section">
+        <!-- Chargement -->
+        <div *ngIf="isLoading" class="loading-spinner">
+          <mat-spinner diameter="24"></mat-spinner>
+        </div>
+
+        <!-- Non connecté -->
+        <div *ngIf="!isLoggedIn && !isLoading" class="auth-buttons">
+          <button mat-raised-button 
+                  color="accent"
+                  (click)="login()">
+            <span>Connexion</span>
+          </button>
+          <button mat-stroked-button 
+                  color="accent"
+                  routerLink="/register"
+                  class="register-button">
+            <span>S'inscrire</span>
+          </button>
+        </div>
+
+        <!-- Connecté -->
+        <div *ngIf="isLoggedIn && userProfile" class="user-info">
+          <span class="welcome-text">Bonjour, {{ userName }}</span>
+          <button mat-button (click)="logout()" class="logout-button" >
+            <span>Déconnexion</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </mat-toolbar>

@@ -1,0 +1,60 @@
+<div class="profile-container">
+  <div class="form-container">
+    <h2>Mon Profil</h2>
+    
+    <div *ngIf="isLoading" class="loading-spinner">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading">
+      <mat-form-field appearance="outline">
+        <mat-label>Prénom</mat-label>
+        <input matInput formControlName="firstName" required>
+        <mat-error *ngIf="profileForm.get('firstName')?.errors?.['required']">
+          Le prénom est requis
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nom</mat-label>
+        <input matInput formControlName="lastName" required>
+        <mat-error *ngIf="profileForm.get('lastName')?.errors?.['required']">
+          Le nom est requis
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" type="email" required>
+        <mat-error *ngIf="profileForm.get('email')?.errors?.['required']">
+          L'email est requis
+        </mat-error>
+        <mat-error *ngIf="profileForm.get('email')?.errors?.['email']">
+          Veuillez entrer un email valide
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Mot de passe (facultatif)</mat-label>
+        <input matInput formControlName="password" type="password">
+        <mat-hint>Laissez vide pour conserver votre mot de passe actuel</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Téléphone</mat-label>
+        <input matInput formControlName="phoneNumber">
+      </mat-form-field>
+
+      <div class="button-container">
+        <button 
+          mat-raised-button 
+          color="primary" 
+          type="submit" 
+          [disabled]="!profileForm.valid || isSaving">
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          <span *ngIf="!isSaving">Enregistrer les modifications</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

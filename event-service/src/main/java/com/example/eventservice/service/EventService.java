@@ -33,10 +33,20 @@ public class EventService {
     private static final String EVENT_UPDATED_TOPIC = "event.updated";
 
     /**
-     * Créer un nouvel événement
+     * Créer un nouvel événement (accessible uniquement par l'admin)
+     * @param event L'événement à créer
+     * @param adminId L'ID de l'administrateur qui crée l'événement
+     * @return L'événement créé
+     * @throws IllegalArgumentException Si l'admin n'est pas valide
      */
-    public EventEntity createEvent(EventEntity event) {
-        logger.info("Création d'un nouvel événement : {}", event.getTitle());
+    public EventEntity createEvent(EventEntity event, Long adminId) {
+        logger.info("Création d'un nouvel événement par l'admin {} : {}", adminId, event.getTitle());
+
+        // S'assurer que l'ID de l'organisateur est bien celui de l'admin
+        if (!adminId.equals(event.getOrganizerId())) {
+            logger.error("Tentative de création d'événement avec un organizerId différent de l'admin connecté");
+            throw new IllegalArgumentException("L'organisateur doit être l'administrateur connecté");
+        }
 
         EventEntity savedEvent = eventRepository.save(event);
 
@@ -48,30 +58,39 @@ public class EventService {
     }
 
     /**
-     * Mettre à jour un événement existant
+     * Mettre à jour un événement existant (uniquement par l'admin)
+     * @param id L'ID de l'événement à mettre à jour
+     * @param eventDetails Les nouvelles données de l'événement
+     * @param adminId L'ID de l'administrateur qui effectue la mise à jour
+     * @return L'événement mis à jour
+     * @throws IllegalArgumentException Si l'admin n'est pas l'organisateur
      */
-    public EventEntity updateEvent(Long id, EventEntity eventDetails) {
-        logger.info("Mise à jour de l'événement avec l'ID : {}", id);
+    public EventEntity updateEvent(Long id, EventEntity eventDetails, Long adminId) {
+        logger.info("Mise à jour de l'événement avec l'ID : {} par l'admin : {}", id, adminId);
 
-        Optional<EventEntity> optionalEvent = eventRepository.findById(id);
-        if (optionalEvent.isEmpty()) {
-            throw new RuntimeException("Événement non trouvé avec l'ID : " + id);
+        EventEntity event = getEventById(id);
+        
+        // Vérifier que l'admin est bien l'organisateur
+        if (!adminId.equals(event.getOrganizerId())) {
+            logger.error("Tentative de mise à jour d'un événement par un non-organisateur. Admin: {}, Organisateur: {}", 
+                adminId, event.getOrganizerId());
+            throw new IllegalArgumentException("Seul l'organisateur peut modifier l'événement");
         }
+        
+        // Mettre à jour uniquement les champs existants dans EventEntity
+        event.setTitle(eventDetails.getTitle());
+        event.setDescription(eventDetails.getDescription());
+        event.setLocation(eventDetails.getLocation());
+        event.setDateTime(eventDetails.getDateTime());
+        // Mettre à jour la date de modification
+        event.setUpdatedAt(LocalDateTime.now());
 
-        EventEntity existingEvent = optionalEvent.get();
-
-        // Mettre à jour les champs
-        existingEvent.setTitle(eventDetails.getTitle());
-        existingEvent.setDescription(eventDetails.getDescription());
-        existingEvent.setLocation(eventDetails.getLocation());
-        existingEvent.setDateTime(eventDetails.getDateTime());
-
-        EventEntity updatedEvent = eventRepository.save(existingEvent);
-
+        EventEntity updatedEvent = eventRepository.save(event);
+        
         // Publier l'événement Kafka
         publishEventUpdated(updatedEvent);
-
-        logger.info("Événement mis à jour avec succès : {}", updatedEvent.getId());
+        
+        logger.info("Événement mis à jour avec succès avec l'ID : {}", updatedEvent.getId());
         return updatedEvent;
     }
 
@@ -90,12 +109,13 @@ public class EventService {
     }
 
     /**
-     * Obtenir un événement par ID
+     * Obtenir un événement par son ID
+     * @param id L'ID de l'événement à récupérer
+     * @return L'entité événement
+     * @throws RuntimeException si l'événement n'est pas trouvé
      */
-    @Transactional(readOnly = true)
     public EventEntity getEventById(Long id) {
-        logger.info("Recherche de l'événement avec l'ID : {}", id);
-
+        logger.info("Récupération de l'événement avec l'ID : {}", id);
         return eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Événement non trouvé avec l'ID : " + id));
     }

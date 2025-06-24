@@ -22,6 +22,8 @@ public class ApiGatewayApplication {
                         .uri("lb://USER"))
                 .route("user-service-api", r -> r.path("/api/**")
                         .uri("lb://USER"))
+                .route("event-service", r -> r.path("/events/**")
+                        .uri("lb://EVENT"))
 
                 .build();
     }

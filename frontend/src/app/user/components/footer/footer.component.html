@@ -1,30 +1,18 @@
 <footer class="app-footer">
   <mat-toolbar color="primary">
     <div class="footer-container">
-      <div class="footer-section">
-        <h3>À propos</h3>
-        <p>Gestion d'événements simplifiée pour une meilleure organisation de vos activités.</p>
+      <div class="footer-left">
+        <span class="copyright">&copy; {{ currentYear }} Gestion d'Événements</span>
       </div>
       
-      <div class="footer-section">
-        <h3>Liens rapides</h3>
-        <ul>
-          <li><a routerLink="/">Accueil</a></li>
-          <li><a routerLink="/events">Événements</a></li>
-          <li><a routerLink="/calendar">Calendrier</a></li>
-          <li><a routerLink="/about">À propos</a></li>
-          <li><a routerLink="/contact">Contact</a></li>
-        </ul>
+      <div class="footer-center">
+        <a routerLink="/" class="footer-link">Accueil</a>
+        <a routerLink="/events" class="footer-link">Événements</a>
+        <a routerLink="/about" class="footer-link">À propos</a>
+        <a routerLink="/contact" class="footer-link">Contact</a>
       </div>
       
-      <div class="footer-section">
-        <h3>Contact</h3>
-        <p><mat-icon>email</mat-icon> contacteventmanager.com</p>
-        <p><mat-icon>phone</mat-icon> +212 6 12 34 56 78</p>
-      </div>
-      
-      <div class="footer-section">
-        <h3>Suivez-nous</h3>
+      <div class="footer-right">
         <div class="social-links">
           <a href="#" aria-label="Facebook"><mat-icon>facebook</mat-icon></a>
           <a href="#" aria-label="Twitter"><mat-icon>twitter</mat-icon></a>
@@ -32,10 +20,6 @@
           <a href="#" aria-label="LinkedIn"><mat-icon>linkedin</mat-icon></a>
         </div>
       </div>
-    </div>
-    
-    <div class="footer-bottom">
-      <p>&copy; {{ currentYear }} Gestion d'Événements. Tous droits réservés.</p>
     </div>
   </mat-toolbar>
 </footer>

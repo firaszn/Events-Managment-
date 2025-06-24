@@ -16,20 +16,55 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.nimbusds.jwt.JWTParser;
+import com.nimbusds.jwt.JWTClaimsSet;
+import org.springframework.security.oauth2.jwt.BadJwtException;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
     @Value("${jwt.secret-key}")
     private String secretKey;
+
+    /**
+     * Décodeur JWT de débogage qui ne valide PAS la signature.
+     * ATTENTION : À N'UTILISER QUE POUR LE DÉBOGAGE.
+     */
+    private static class UnsafeDebugJwtDecoder implements JwtDecoder {
+        @Override
+        public Jwt decode(String token) throws JwtException {
+            try {
+                com.nimbusds.jwt.JWT jwt = JWTParser.parse(token);
+                JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
+                Map<String, Object> headers = new HashMap<>(jwt.getHeader().toJSONObject());
+                Map<String, Object> claims = new HashMap<>(claimsSet.getClaims());
+
+                Instant issuedAt = claimsSet.getIssueTime().toInstant();
+                Instant expiresAt = claimsSet.getExpirationTime().toInstant();
+
+                return new Jwt(token, issuedAt, expiresAt, headers, claims);
+            } catch (Exception e) {
+                throw new BadJwtException("Failed to parse JWT", e);
+            }
+        }
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -38,10 +73,6 @@ public class SecurityConfig {
         // Utiliser le bean JwtAuthenticationConverter configuré
 
         http
-            .cors(cors -> {
-                cors.configurationSource(corsConfigurationSource());
-                System.out.println("CORS configuration applied");
-            })
             .csrf(csrf -> {
                 csrf.disable();
                 System.out.println("CSRF disabled");
@@ -53,6 +84,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> {
                 System.out.println("Configuring authorization rules");
                 authorize
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/auth/register").permitAll()
                     .requestMatchers("/auth/login").permitAll()
                     .requestMatchers("/auth/google").permitAll()
@@ -83,11 +115,8 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        System.out.println("Creating TEST JWT decoder (signature validation disabled)");
-
-        // TEMPORAIRE: Utiliser le décodeur de test pour déboguer
-        // TODO: Remplacer par la vraie clé de signature une fois trouvée
-        return new TestJwtDecoder();
+        logger.warn("!!! AVERTISSEMENT DE SÉCURITÉ : LA VALIDATION DE LA SIGNATURE JWT EST DÉSACTIVÉE. POUR LE DÉBOGAGE UNIQUEMENT. !!!");
+        return new UnsafeDebugJwtDecoder();
     }
 
     @Bean
@@ -109,19 +138,6 @@ public class SecurityConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
         return converter;
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
     }
 
 }

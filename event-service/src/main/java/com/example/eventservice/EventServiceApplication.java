@@ -3,7 +3,6 @@ package com.example.eventservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.kafka.annotation.EnableKafka;
 
 /**
  * Application principale du Event Service
@@ -19,7 +18,6 @@ import org.springframework.kafka.annotation.EnableKafka;
  */
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableKafka
 public class EventServiceApplication {
 
 	public static void main(String[] args) {

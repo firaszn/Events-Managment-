@@ -3,161 +3,92 @@
   width: 100%;
   
   mat-toolbar {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    min-height: auto;
+    min-height: 64px;
     height: auto;
-    background-color: #f5f5f5;
-    color: #333;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    padding: 16px 0;
+    background-color: #1976d2;
+    color: white;
   }
 
   .footer-container {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 40px 16px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 32px;
-    color: #333;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
 
-    @media (min-width: 768px) {
-      grid-template-columns: repeat(2, 1fr);
-      padding: 40px 24px;
-    }
-
-    @media (min-width: 1024px) {
-      grid-template-columns: repeat(4, 1fr);
+  .footer-left {
+    .copyright {
+      font-size: 0.9rem;
+      white-space: nowrap;
     }
   }
 
-  .footer-section {
-    h3 {
-      color: #1976d2;
-      margin-top: 0;
-      margin-bottom: 16px;
-      font-size: 1.2rem;
-      font-weight: 600;
-      border-bottom: 2px solid #e0e0e0;
-      padding-bottom: 8px;
-      display: inline-block;
-    }
+  .footer-center {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
 
-    p, a {
-      color: #333;
-      margin: 12px 0;
-      display: flex;
-      align-items: center;
+    .footer-link {
+      color: white;
       text-decoration: none;
-      transition: color 0.3s ease;
-      font-size: 0.95rem;
-      line-height: 1.5;
+      font-size: 0.9rem;
+      transition: opacity 0.3s ease;
+      white-space: nowrap;
 
-      mat-icon {
-        margin-right: 10px;
-        font-size: 1.2rem;
-        width: 1.2rem;
-        height: 1.2rem;
-        color: #1976d2;
-      }
-      
       &:hover {
-        color: #1976d2;
-        text-decoration: none;
-        transform: translateX(4px);
+        opacity: 0.8;
       }
     }
+  }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+  .footer-right {
+    .social-links {
+      display: flex;
+      gap: 12px;
 
-      li {
-        margin-bottom: 8px;
+      a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        transition: all 0.3s ease;
 
-        a {
-          color: #333;
-          margin: 12px 0;
-          display: flex;
-          align-items: center;
-          text-decoration: none;
-          transition: color 0.3s ease;
-          font-size: 0.95rem;
-          line-height: 1.5;
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.2);
+          transform: translateY(-2px);
+        }
 
-          mat-icon {
-            margin-right: 10px;
-            font-size: 1.2rem;
-            width: 1.2rem;
-            height: 1.2rem;
-            color: #1976d2;
-          }
-          
-          &:hover {
-            color: #1976d2;
-            text-decoration: none;
-            transform: translateX(4px);
-          }
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
       }
     }
   }
 
-  .social-links {
-    display: flex;
-    gap: 16px;
-    margin-top: 20px;
-
-    a {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background-color: #e0e0e0;
-      color: #333;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-      &:hover {
-        background-color: #1976d2;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      mat-icon {
-        margin: 0;
-        font-size: 1.2rem;
-      }
-    }
-  }
-
-  .footer-bottom {
-    width: 100%;
-    text-align: center;
-    padding: 20px 16px;
-    margin-top: 24px;
-    border-top: 1px solid #e0e0e0;
-    font-size: 0.9rem;
-    color: #666;
-    background-color: #f0f0f0;
-    font-weight: 500;
-  }
-
-  @media (max-width: 767px) {
-    .footer-section {
+  @media (max-width: 768px) {
+    .footer-container {
+      flex-direction: column;
       text-align: center;
-
-      p, ul li a {
-        justify-content: center;
-      }
+      padding: 16px;
+      gap: 16px;
     }
-    
+
+    .footer-center {
+      gap: 16px;
+    }
+
     .social-links {
       justify-content: center;
     }

@@ -30,6 +30,17 @@ import java.util.Map;
 
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.oauth2.jwt.JwtException;
+import reactor.core.scheduler.Schedulers;
+
+import java.text.ParseException;
+import java.util.Collections;
+import java.util.HashMap;
+import com.nimbusds.jwt.JWTClaimsSet;
+import org.springframework.http.HttpMethod;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -43,105 +54,53 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     private String jwkSetUri;
 
+    /**
+     * Décodeur JWT de débogage qui ne valide PAS la signature.
+     * ATTENTION : À N'UTILISER QUE POUR LE DÉBOGAGE.
+     */
+    private static class UnsafeDebugJwtDecoder implements ReactiveJwtDecoder {
+        @Override
+        public Mono<Jwt> decode(String token) {
+            return Mono.fromCallable(() -> {
+                try {
+                    com.nimbusds.jwt.JWT jwt = com.nimbusds.jwt.JWTParser.parse(token);
+                    JWTClaimsSet claimsSet = jwt.getJWTClaimsSet();
+                    Map<String, Object> headers = new HashMap<>(jwt.getHeader().toJSONObject());
+                    Map<String, Object> claims = new HashMap<>(claimsSet.getClaims());
+
+                    Instant issuedAt = claimsSet.getIssueTime().toInstant();
+                    Instant expiresAt = claimsSet.getExpirationTime().toInstant();
+
+                    return new Jwt(token, issuedAt, expiresAt, headers, claims);
+                } catch (ParseException e) {
+                    throw new BadJwtException("Failed to parse JWT", e);
+                }
+            }).subscribeOn(Schedulers.boundedElastic());
+        }
+    }
+
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-        return http
-                .cors(cors -> cors.configurationSource(request -> {
-                    CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.setAllowedOrigins(List.of("http://localhost:4200"));
-                    corsConfig.setMaxAge(3600L);
-                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    corsConfig.setAllowedHeaders(List.of("*"));
-                    corsConfig.setAllowCredentials(true);
-                    return corsConfig;
-                }))
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-
-                .authorizeExchange(exchanges -> exchanges
-                        // Endpoints publics d'authentification
-                        .pathMatchers("/auth/register", "/auth/login", "/auth/google").permitAll()
-                        .pathMatchers("/auth/keycloak/**").permitAll()
-                        .pathMatchers("/auth/forgot-password", "/auth/reset-password", "/auth/verify-email").permitAll()
-
-                        // Endpoints Swagger/Actuator
-                        .pathMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .pathMatchers("/v2/api-docs", "/swagger-resources/**", "/configuration/**", "/webjars/**").permitAll()
-
-                        // Endpoints utilisateur
-                        .pathMatchers("/api/users/profile").authenticated()
-                        .pathMatchers("/api/users/**").hasRole("ADMIN")
-
-                        // Autres services
-                        .pathMatchers("/events/**").authenticated()
-                        .pathMatchers("/invitations/**").authenticated()
-
-                        // Tout le reste nécessite une authentification
-                        .anyExchange().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt
-                                .jwtDecoder(jwtDecoder())
-                                .jwtAuthenticationConverter(grantedAuthoritiesExtractor())
-                        )
-                )
-                .build();
+        http
+            .cors().and()
+            .csrf().disable()
+            .authorizeExchange()
+            .pathMatchers("/auth/**").permitAll()
+            .pathMatchers("/events/**").authenticated()
+            .pathMatchers("/api/users/**").authenticated()
+            .pathMatchers("/api/password/**").authenticated()
+            .pathMatchers("/actuator/**").permitAll()
+            .anyExchange().authenticated()
+            .and()
+            .oauth2ResourceServer()
+            .jwt();
+        return http.build();
     }
 
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
-        System.out.println("Creating TEST JWT decoder (signature validation disabled)");
-        
-        // Créer un décodeur qui ignore la validation de signature (comme dans user-service)
-        return new ReactiveJwtDecoder() {
-            private final ObjectMapper objectMapper = new ObjectMapper();
-            
-            @Override
-            public Mono<Jwt> decode(String token) throws JwtException {
-                try {
-                    System.out.println("Décodage du token JWT sans validation de signature (MODE TEST)");
-                    
-                    // Séparer les parties du JWT
-                    String[] parts = token.split("\\.");
-                    if (parts.length != 3) {
-                        return Mono.error(new JwtException("Token JWT invalide - doit avoir 3 parties"));
-                    }
-
-                    // Décoder le header
-                    String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> headers = objectMapper.readValue(headerJson, Map.class);
-
-                    // Décoder le payload
-                    String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> claims = objectMapper.readValue(payloadJson, Map.class);
-
-                    // Extraire les timestamps
-                    Instant issuedAt = claims.containsKey("iat") ?
-                        Instant.ofEpochSecond(((Number) claims.get("iat")).longValue()) : 
-                        Instant.now();
-                        
-                    Instant expiresAt = claims.containsKey("exp") ? 
-                        Instant.ofEpochSecond(((Number) claims.get("exp")).longValue()) : 
-                        Instant.now().plusSeconds(3600);
-
-                    // Créer le JWT
-                    Jwt jwt = new Jwt(token, issuedAt, expiresAt, headers, claims);
-
-                    System.out.println("Token décodé avec succès (MODE TEST):");
-                    System.out.println("- Issuer: " + jwt.getIssuer());
-                    System.out.println("- Subject: " + jwt.getSubject());
-                    System.out.println("- Email: " + jwt.getClaimAsString("email"));
-                    System.out.println("- Roles: " + jwt.getClaimAsMap("realm_access"));
-
-                    return Mono.just(jwt);
-
-                } catch (Exception e) {
-                    System.err.println("Erreur lors du décodage du token: " + e.getMessage());
-                    return Mono.error(new JwtException("Impossible de décoder le token JWT", e));
-                }
-            }
-        };
+        logger.warn("!!! AVERTISSEMENT DE SÉCURITÉ : LA VALIDATION DE LA SIGNATURE JWT EST DÉSACTIVÉE. POUR LE DÉBOGAGE UNIQUEMENT. !!!");
+        return new UnsafeDebugJwtDecoder();
     }
 
     private Converter<Jwt, Mono<org.springframework.security.authentication.AbstractAuthenticationToken>> grantedAuthoritiesExtractor() {
@@ -153,10 +112,10 @@ public class SecurityConfig {
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:4200"));
+        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
         corsConfig.setMaxAge(3600L);
-        corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        corsConfig.setAllowedHeaders(List.of("*"));
+        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        corsConfig.setAllowedHeaders(Arrays.asList("*"));
         corsConfig.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

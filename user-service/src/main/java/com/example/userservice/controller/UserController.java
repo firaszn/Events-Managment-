@@ -58,9 +58,16 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
+            // Récupérer l'email de l'admin connecté
+            String currentUserEmail = keycloakUserService.getEmailFromToken(authentication);
+            
             List<UserEntity> users = keycloakUserService.getAllUsers();
+            // Filtrer l'administrateur connecté de la liste
+            users = users.stream()
+                .filter(user -> !user.getEmail().equals(currentUserEmail))
+                .toList();
             List<UserResponse> userResponses = userMapper.toUserResponseList(users);
-            log.info("Récupération de {} utilisateurs", users.size());
+            log.info("Récupération de {} utilisateurs (sans admin)", users.size());
             return ResponseEntity.ok(userResponses);
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des utilisateurs", e);
@@ -158,6 +165,7 @@ public class UserController {
     @PutMapping("/profile")
     public ResponseEntity<UserResponse> updateProfile(@Valid @RequestBody UserUpdateRequest updateRequest,
                                                      Authentication authentication) {
+        log.info("Requête de mise à jour du profil reçue : {}", updateRequest);
         log.info("Requête de mise à jour du profil utilisateur avec token Keycloak");
         try {
             UserEntity currentUser = keycloakUserService.getCurrentUserFromToken(authentication);

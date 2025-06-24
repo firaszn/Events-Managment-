@@ -1,8 +1,10 @@
 import { KeycloakService } from 'keycloak-angular';
 import { environment } from '../environments/environment';
 import { keycloakInitOptions } from '../core/config/keycloak-config';
+import { RoleService } from '../core/services/role.service';
+import { keycloakConfig } from '../core/config/keycloak-config';
 
-export function initializer(keycloak: KeycloakService): () => Promise<boolean> {
+export function initializer(keycloak: KeycloakService, roleService: RoleService): () => Promise<boolean> {
   return (): Promise<boolean> => {
     return new Promise(async (resolve) => {
       // Vérifier si on est côté navigateur
@@ -74,7 +76,9 @@ export function initializer(keycloak: KeycloakService): () => Promise<boolean> {
               console.log('Loading user profile...');
               const profile = await keycloak.loadUserProfile();
               console.log('User profile loaded successfully:', profile);
-              console.log('User roles:', keycloak.getUserRoles());
+              const roles = keycloak.getUserRoles();
+              roleService.setRoles(roles);
+              console.log('User roles:', roles);
               
               // Log token info (sans le token complet pour des raisons de sécurité)
               const token = keycloak.getKeycloakInstance().token;
@@ -124,3 +128,18 @@ export function initializer(keycloak: KeycloakService): () => Promise<boolean> {
     });
   };
 }
+export function initializeKeycloak(keycloak: KeycloakService) {
+  return () =>
+    keycloak.init({
+      config: keycloakConfig,
+      initOptions: {
+        onLoad: 'check-sso',
+        silentCheckSsoRedirectUri: window.location.origin + '/assets/silent-check-sso.html',
+        checkLoginIframe: false
+      },
+      enableBearerInterceptor: true,
+      bearerPrefix: 'Bearer',
+      bearerExcludedUrls: ['/assets']
+    });
+}
+

@@ -78,23 +78,18 @@ export class AuthService {
     });
   }
 
-  public async logout(redirectUri?: string): Promise<boolean> {
+  public async logout(): Promise<void> {
     try {
-      console.log('Logging out...');
-      const redirect = redirectUri || window.location.origin ;
-      await this.keycloakService.logout(redirect);
-      console.log('Logout successful');
-      return true;
+      console.log('Logging out and redirecting...');
+      const redirectUri = window.location.origin; // e.g., 'http://localhost:4200'
+      const logoutUrl = this.keycloakService.getKeycloakInstance().createLogoutUrl({
+        redirectUri: redirectUri
+      });
+      
+      // Force a full redirect
+      window.location.href = logoutUrl;
     } catch (error) {
       console.error('Error during logout:', error);
-      // En cas d'erreur, tenter une déconnexion forcée
-      try {
-        window.location.href = this.keycloakService.getKeycloakInstance().createLogoutUrl();
-        return true;
-      } catch (e) {
-        console.error('Force logout failed:', e);
-        return false;
-      }
     }
   }
 

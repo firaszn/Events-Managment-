@@ -4,5 +4,22 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
+  },
+  "/events": {
+    "target": "http://localhost:8093",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/invitations": {
+    "target": "http://localhost:8083",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/auth": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true
   }
 }

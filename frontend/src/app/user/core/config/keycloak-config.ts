@@ -1,15 +1,16 @@
 import { KeycloakConfig, KeycloakInitOptions } from 'keycloak-js';
+import { environment } from '@env/environment';
 
 // Configuration de base pour Keycloak
-const keycloakConfig: KeycloakConfig = {
-  url: 'http://localhost:8080',
-  realm: 'RepasKeycloak',
-  clientId: 'repas-service'
+export const keycloakConfig: KeycloakConfig = {
+  url: environment.keycloak.url,
+  realm: environment.keycloak.realm,
+  clientId: environment.keycloak.clientId
 };
 
 // Options d'initialisation pour Keycloak
 export const keycloakInitOptions: KeycloakInitOptions = {
-  onLoad: 'check-sso',
+  onLoad: 'login-required',
   checkLoginIframe: false,
   enableLogging: true,
   flow: 'implicit',  // Utilisation du flux implicite

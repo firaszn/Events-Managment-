@@ -62,34 +62,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   async logout() {
-    try {
       this.isLoading = true;
-      console.log('Initiating logout...');
-      
-      // Forcer la déconnexion complète avec redirection vers la page de connexion Keycloak
-      const redirectUri = window.location.origin + '/login';
-      const logoutSuccessful = await this.authService.logout(redirectUri);
-      
-      if (!logoutSuccessful) {
-        // Si la déconnexion échoue, forcer le rechargement de la page
-        window.location.href = '/login';
-        return;
-      }
-      
-      console.log('Logout successful, navigating to login');
-      
-      // S'assurer que l'utilisateur est bien déconnecté
-      this.router.navigate(['/login']).then(() => {
-        console.log('Navigation to login complete');
-        // Rafraîchir la page pour s'assurer que tout est réinitialisé
-        window.location.reload();
-      });
+    try {
+      await this.authService.logout();
     } catch (error) {
       console.error('Logout error:', error);
       this.showError('Erreur lors de la déconnexion');
-      
-      // En cas d'erreur, rediriger quand même vers la page de connexion
-      window.location.href = '/login';
     } finally {
       this.isLoading = false;
     }

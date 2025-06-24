@@ -10,6 +10,7 @@ import { Subject, takeUntil, map } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { Router, RouterLink, RouterLinkActive, RouterModule } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { AuthManagerService } from '../../core/services/auth-manager.service';
 
 @Component({
   selector: 'app-navbar',
@@ -43,7 +44,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
   
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private authManager: AuthManagerService
   ) {
     // Watch for screen size changes
     this.breakpointObserver.observe([
@@ -132,7 +134,6 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     try {
       await this.authService.logout();
-      this.router.navigate(['http://localhost:8080/realms/RepasKeycloak/protocol/openid-connect/auth?client_id=repas-service&redirect_uri=http%3A%2F%2Flocalhost%3A4200&state=b8d0d236-3616-46f9-a273-18c4d6080359&response_mode=fragment&response_type=id_token%20token&scope=openid&nonce=390d1600-508c-4dfd-ad4c-4898ed6a69ff&code_challenge=RZm5XHWMrfWOA9lLvOgMxviRVz0MyK1LVa2xhqjUxxY&code_challenge_method=S256']);
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -162,5 +163,19 @@ export class NavbarComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  public get isAuthenticated(): Promise<boolean> {
+    return this.authManager.isAuthenticated();
+  }
+
+  public isAdmin(): boolean {
+    return this.authManager.hasRole('ADMIN');
+  }
+
+  public navigateToProfile(): void {
+    this.authManager.checkAuthentication().subscribe((authenticated) => {
+      // ... existing code ...
+    });
   }
 }

@@ -9,6 +9,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subject, takeUntil } from 'rxjs';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../../core/services/auth.service';
 import { KeycloakProfile } from 'keycloak-js';
@@ -24,7 +26,9 @@ import { KeycloakProfile } from 'keycloak-js';
     MatIconModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    RouterModule,
+    FormsModule
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
@@ -34,6 +38,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   roles: string[] = [];
   isLoading = true;
   private destroy$ = new Subject<void>();
+  newsletterEmail: string = '';
 
   constructor(
     private authService: AuthService,
@@ -59,6 +64,14 @@ export class HomeComponent implements OnInit, OnDestroy {
     } finally {
       this.isLoading = false;
     }
+
+    // Add animation classes after component loads
+    setTimeout(() => {
+      const heroContent = document.querySelector('.hero-content');
+      if (heroContent) {
+        heroContent.classList.add('animate__animated', 'animate__fadeIn');
+      }
+    }, 100);
   }
 
   async logout() {
@@ -78,6 +91,15 @@ export class HomeComponent implements OnInit, OnDestroy {
       duration: 5000,
       panelClass: ['error-snackbar']
     });
+  }
+
+  onNewsletterSubmit() {
+    if (this.newsletterEmail) {
+      // TODO: Implement newsletter subscription logic
+      console.log('Newsletter subscription for:', this.newsletterEmail);
+      alert('Merci de votre inscription à notre newsletter !');
+      this.newsletterEmail = '';
+    }
   }
 
   ngOnDestroy() {

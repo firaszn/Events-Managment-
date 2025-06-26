@@ -1,4 +1,10 @@
 {
+  "/api/invitations": {
+    "target": "http://localhost:8083",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
   "/api": {
     "target": "http://localhost:8093",
     "secure": false,
@@ -7,12 +13,6 @@
   },
   "/events": {
     "target": "http://localhost:8093",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  },
-  "/invitations": {
-    "target": "http://localhost:8083",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

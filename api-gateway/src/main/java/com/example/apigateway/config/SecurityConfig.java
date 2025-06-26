@@ -85,15 +85,17 @@ public class SecurityConfig {
             .cors().and()
             .csrf().disable()
             .authorizeExchange()
+            .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .pathMatchers("/auth/**").permitAll()
             .pathMatchers("/events/**").authenticated()
+            .pathMatchers("/api/invitations/**").authenticated()
             .pathMatchers("/api/users/**").authenticated()
             .pathMatchers("/api/password/**").authenticated()
             .pathMatchers("/actuator/**").permitAll()
             .anyExchange().authenticated()
             .and()
             .oauth2ResourceServer()
-            .jwt();
+            .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor()));
         return http.build();
     }
 

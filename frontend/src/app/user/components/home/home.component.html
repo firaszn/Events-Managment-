@@ -1,0 +1,150 @@
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-content">
+    <h1 class="animate__animated animate__fadeInDown">Bienvenue sur Gestion d'Événements</h1>
+    <p class="animate__animated animate__fadeInUp">Créez, organisez et participez à des événements inoubliables</p>
+    <div class="hero-buttons animate__animated animate__fadeInUp">
+      <button routerLink="/events" class="btn-primary">Découvrir les événements</button>
+      <button routerLink="/register" class="btn-secondary">Créer un compte</button>
+    </div>
+  </div>
+  <div class="hero-overlay"></div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section">
+  <div class="container">
+    <h2 class="section-title">Pourquoi nous choisir ?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h3>Gestion Simplifiée</h3>
+        <p>Créez et gérez vos événements en quelques clics avec notre interface intuitive.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <h3>Communauté Active</h3>
+        <p>Rejoignez une communauté dynamique et passionnée d'organisateurs et de participants.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-bell"></i>
+        </div>
+        <h3>Notifications en Temps Réel</h3>
+        <p>Restez informé des dernières actualités de vos événements favoris.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Popular Events Section -->
+<section class="events-section">
+  <div class="container">
+    <h2 class="section-title">Événements Populaires</h2>
+    <div class="events-slider">
+      <!-- Tech Conference -->
+      <div class="event-card">
+        <div class="event-image">
+          <img src="https://images.pexels.com/photos/2833037/pexels-photo-2833037.jpeg" alt="Tech Conference">
+          <div class="event-date">
+            <span class="day">25</span>
+            <span class="month">JUN</span>
+          </div>
+        </div>
+        <div class="event-content">
+          <h3>Tech Conference 2024</h3>
+          <p class="event-location"><i class="fas fa-map-marker-alt"></i> Tunis, Tunisia</p>
+          <p class="event-description">Découvrez les dernières innovations technologiques et rencontrez des experts du domaine.</p>
+          <button class="btn-details">En savoir plus</button>
+        </div>
+      </div>
+
+      <!-- AI Summit -->
+      <div class="event-card">
+        <div class="event-image">
+          <img src="https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg" alt="AI Summit">
+          <div class="event-date">
+            <span class="day">15</span>
+            <span class="month">JUL</span>
+          </div>
+        </div>
+        <div class="event-content">
+          <h3>AI Summit 2024</h3>
+          <p class="event-location"><i class="fas fa-map-marker-alt"></i> Paris, France</p>
+          <p class="event-description">Explorez le futur de l'intelligence artificielle avec des conférenciers de renommée mondiale.</p>
+          <button class="btn-details">En savoir plus</button>
+        </div>
+      </div>
+
+      <!-- Web Dev Workshop -->
+      <div class="event-card">
+        <div class="event-image">
+          <img src="https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg" alt="Web Development Workshop">
+          <div class="event-date">
+            <span class="day">10</span>
+            <span class="month">AUG</span>
+          </div>
+        </div>
+        <div class="event-content">
+          <h3>Web Dev Workshop 2024</h3>
+          <p class="event-location"><i class="fas fa-map-marker-alt"></i> Lyon, France</p>
+          <p class="event-description">Apprenez les dernières technologies web et améliorez vos compétences en développement.</p>
+          <button class="btn-details">En savoir plus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats-section">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item animate__animated animate__fadeIn">
+        <div class="stat-number">1000+</div>
+        <div class="stat-label">Événements Organisés</div>
+      </div>
+      <div class="stat-item animate__animated animate__fadeIn">
+        <div class="stat-number">50000+</div>
+        <div class="stat-label">Participants</div>
+      </div>
+      <div class="stat-item animate__animated animate__fadeIn">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Organisateurs Actifs</div>
+      </div>
+      <div class="stat-item animate__animated animate__fadeIn">
+        <div class="stat-number">95%</div>
+        <div class="stat-label">Satisfaction</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-content">
+      <h2>Prêt à créer votre prochain événement ?</h2>
+      <p>Rejoignez-nous dès aujourd'hui et commencez à organiser des événements mémorables</p>
+      <button routerLink="/register" class="btn-cta">Commencer Maintenant</button>
+    </div>
+  </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="newsletter-section">
+  <div class="container">
+    <div class="newsletter-content">
+      <h2>Restez Informé</h2>
+      <p>Inscrivez-vous à notre newsletter pour ne manquer aucun événement</p>
+      <form class="newsletter-form" (ngSubmit)="onNewsletterSubmit()">
+        <input type="email" placeholder="Votre adresse email" [(ngModel)]="newsletterEmail" name="email" required>
+        <button type="submit" class="btn-subscribe">S'abonner</button>
+      </form>
+    </div>
+  </div>
+</section>

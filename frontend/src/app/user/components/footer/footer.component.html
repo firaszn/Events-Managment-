@@ -1,25 +1,73 @@
-<footer class="app-footer">
-  <mat-toolbar color="primary">
-    <div class="footer-container">
-      <div class="footer-left">
-        <span class="copyright">&copy; {{ currentYear }} Gestion d'Événements</span>
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-content">
+    <!-- Gestion d'Événements Section -->
+    <div class="footer-section">
+      <h3>Gestion d'Événements</h3>
+      <p>
+        Notre plateforme de gestion d'événements vous permet de créer, organiser et participer à des événements passionnants. Rejoignez notre communauté et découvrez de nouvelles expériences.
+      </p>
+    </div>
+
+    <!-- Navigation Section -->
+    <div class="footer-section">
+      <h3>Navigation</h3>
+      <ul>
+        <li><a routerLink="/">Accueil</a></li>
+        <li><a routerLink="/events">Événements</a></li>
+        <li><a routerLink="/about">À propos</a></li>
+        <li><a routerLink="/contact">Contact</a></li>
+      </ul>
       </div>
       
-      <div class="footer-center">
-        <a routerLink="/" class="footer-link">Accueil</a>
-        <a routerLink="/events" class="footer-link">Événements</a>
-        <a routerLink="/about" class="footer-link">À propos</a>
-        <a routerLink="/contact" class="footer-link">Contact</a>
+    <!-- Contact Section -->
+    <div class="footer-section">
+      <h3>Contact</h3>
+      <ul>
+        <li>
+          <i class="fas fa-home"></i>
+          <span>Tunis, TN 1000</span>
+        </li>
+        <li>
+          <i class="fas fa-envelope"></i>
+          <span>contact&#64;evenements.tn</span>
+        </li>
+        <li>
+          <i class="fas fa-phone"></i>
+          <span>+216 71 234 567</span>
+        </li>
+        <li>
+          <i class="fas fa-print"></i>
+          <span>+216 71 234 568</span>
+        </li>
+      </ul>
       </div>
       
-      <div class="footer-right">
+    <!-- Social Media Section -->
+    <div class="footer-section">
+      <h3>Suivez-nous</h3>
         <div class="social-links">
-          <a href="#" aria-label="Facebook"><mat-icon>facebook</mat-icon></a>
-          <a href="#" aria-label="Twitter"><mat-icon>twitter</mat-icon></a>
-          <a href="#" aria-label="Instagram"><mat-icon>instagram</mat-icon></a>
-          <a href="#" aria-label="LinkedIn"><mat-icon>linkedin</mat-icon></a>
-        </div>
+        <a href="#" class="social-link facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="#" class="social-link twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="#" class="social-link instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="#" class="social-link linkedin">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+        <a href="#" class="social-link github">
+          <i class="fab fa-github"></i>
+        </a>
       </div>
     </div>
-  </mat-toolbar>
+  </div>
+
+  <!-- Copyright -->
+  <div class="copyright">
+    <p>© {{ currentYear }} Copyright: <a href="/">Gestion d'Événements</a></p>
+  </div>
 </footer>

@@ -60,6 +60,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
 
 		<!-- Database -->
 		<dependency>
@@ -90,6 +94,19 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- Feign OAuth2 -->
+		<dependency>
+			<groupId>io.github.openfeign</groupId>
+			<artifactId>feign-oauth2</artifactId>
+			<version>12.1</version>
+		</dependency>
+
+		<!-- Remplacer la dépendance problématique -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
 	</dependencies>
 

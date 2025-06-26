@@ -13,4 +13,5 @@ public class EventResponse {
     private String organizerId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean userRegistered;
 } 

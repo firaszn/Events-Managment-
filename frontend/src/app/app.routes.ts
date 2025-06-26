@@ -35,7 +35,8 @@ export const routes: Routes = [
   {
     path: 'admin-dashboard',
     component: AdminDashboardComponent,
-    canActivate: [AuthGuard, AdminGuard]
+    canActivate: [AuthGuard, AdminGuard],
+    data: { hideNavbar: true }
   },
   {
     path: '**',

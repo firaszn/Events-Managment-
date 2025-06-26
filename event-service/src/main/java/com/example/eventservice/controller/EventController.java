@@ -1,5 +1,6 @@
 package com.example.eventservice.controller;
 
+import com.example.eventservice.client.InvitationClient;
 import com.example.eventservice.entity.EventEntity;
 import com.example.eventservice.mapper.EventMapper;
 import com.example.eventservice.model.EventRequest;
@@ -7,6 +8,8 @@ import com.example.eventservice.model.EventResponse;
 import com.example.eventservice.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +18,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/events")
@@ -23,6 +27,8 @@ public class EventController {
 
     private final EventService eventService;
     private final EventMapper eventMapper;
+    private final InvitationClient invitationClient;
+    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -34,9 +40,43 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EventResponse>> getAllEvents() {
+    public ResponseEntity<List<EventResponse>> getAllEvents(@AuthenticationPrincipal Jwt jwt) {
         List<EventEntity> events = eventService.getAllEvents();
-        return ResponseEntity.ok(eventMapper.toResponseList(events));
+        String userEmail = jwt.getClaim("email");
+        
+        logger.info("Getting all events for user: {}", userEmail);
+        logger.debug("JWT token subject: {}", jwt.getSubject());
+        logger.debug("JWT token claims: {}", jwt.getClaims());
+        
+        List<EventResponse> responses = events.stream()
+            .map(event -> {
+                EventResponse response = eventMapper.toResponse(event);
+                
+                try {
+                    logger.info("Checking registration for event ID: {} ({})", event.getId(), event.getTitle());
+                    
+                    ResponseEntity<Boolean> registrationResponse = invitationClient.isUserRegisteredForEvent(event.getId(), userEmail);
+                    
+                    if (registrationResponse.getBody() != null) {
+                        boolean isRegistered = registrationResponse.getBody();
+                        logger.info("User {} is {} registered for event {}", 
+                                  userEmail, isRegistered ? "" : "not", event.getId());
+                        response.setUserRegistered(isRegistered);
+                    } else {
+                        logger.warn("Received null response body for event {} registration check", event.getId());
+                        response.setUserRegistered(false);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error checking registration for event {}: {}", event.getId(), e.getMessage());
+                    logger.error("Full error details:", e);
+                    response.setUserRegistered(false);
+                }
+                return response;
+            })
+            .collect(Collectors.toList());
+        
+        logger.info("Returning {} events", responses.size());
+        return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/{id}")

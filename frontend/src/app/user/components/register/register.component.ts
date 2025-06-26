@@ -2,13 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-
 import { RegisterService } from '../../core/services/register.service';
 
 @Component({
@@ -18,184 +12,269 @@ import { RegisterService } from '../../core/services/register.service';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    MatCardModule,
-    MatInputModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatProgressSpinnerModule,
     MatSnackBarModule
   ],
   template: `
-    <div class="register-container">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Inscription</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" #form="ngForm">
-            <mat-form-field appearance="outline">
-              <mat-label>Prénom</mat-label>
-              <input matInput formControlName="firstName" required>
-              <mat-error *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid">
+    <div class="register-page">
+      <div class="register-container">
+        <div class="register-content">
+          <h1 class="register-title">Inscription</h1>
+          <p class="register-subtitle">Rejoignez-nous pour créer et participer à des événements exceptionnels</p>
+          
+          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+            <div class="form-group">
+              <label for="firstName">Prénom</label>
+              <input 
+                id="firstName"
+                type="text" 
+                formControlName="firstName" 
+                [class.error]="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid"
+                placeholder="Votre prénom"
+              >
+              <span class="error-message" *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid">
                 Le prénom est requis
-              </mat-error>
-            </mat-form-field>
+              </span>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Nom</mat-label>
-              <input matInput formControlName="lastName" required>
-              <mat-error *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid">
+            <div class="form-group">
+              <label for="lastName">Nom</label>
+              <input 
+                id="lastName"
+                type="text" 
+                formControlName="lastName" 
+                [class.error]="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid"
+                placeholder="Votre nom"
+              >
+              <span class="error-message" *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid">
                 Le nom est requis
-              </mat-error>
-            </mat-form-field>
+              </span>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" formControlName="email" required>
-              <mat-error *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input 
+                id="email"
+                type="email" 
+                formControlName="email" 
+                [class.error]="registerForm.get('email')?.touched && registerForm.get('email')?.invalid"
+                placeholder="votre.email@exemple.com"
+              >
+              <span class="error-message" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
                 Un email valide est requis
-              </mat-error>
-            </mat-form-field>
+              </span>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Mot de passe</mat-label>
-              <input matInput type="password" formControlName="password" required>
-              <mat-error *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid">
+            <div class="form-group">
+              <label for="password">Mot de passe</label>
+              <input 
+                id="password"
+                type="password" 
+                formControlName="password" 
+                [class.error]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid"
+                placeholder="Votre mot de passe"
+              >
+              <span class="error-message" *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid">
                 Le mot de passe doit contenir au moins 8 caractères
-              </mat-error>
-            </mat-form-field>
+              </span>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Numéro de téléphone</mat-label>
-              <input matInput formControlName="phoneNumber" required>
-              <mat-error *ngIf="registerForm.get('phoneNumber')?.touched && registerForm.get('phoneNumber')?.invalid">
+            <div class="form-group">
+              <label for="phoneNumber">Numéro de téléphone</label>
+              <input 
+                id="phoneNumber"
+                type="tel" 
+                formControlName="phoneNumber" 
+                [class.error]="registerForm.get('phoneNumber')?.touched && registerForm.get('phoneNumber')?.invalid"
+                placeholder="Votre numéro de téléphone"
+              >
+              <span class="error-message" *ngIf="registerForm.get('phoneNumber')?.touched && registerForm.get('phoneNumber')?.invalid">
                 Le numéro de téléphone est requis
-              </mat-error>
-            </mat-form-field>
+              </span>
+            </div>
 
-            <div class="button-container">              <button mat-raised-button color="primary" type="submit">
+            <div class="form-actions">
+              <button 
+                type="submit" 
+                class="submit-button" 
+                [disabled]="registerForm.invalid || isLoading"
+              >
                 <div class="button-content">
-                  <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
-                  <span>S'inscrire </span>
+                  <div class="spinner" *ngIf="isLoading"></div>
+                  <span>S'inscrire</span>
                 </div>
               </button>
+              
              
             </div>
           </form>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    /* Conteneur principal */
+    .register-page {
+      min-height: calc(100vh - 64px);
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 40px 20px;
+    }
+
     .register-container {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: calc(100vh - 64px); /* Hauteur totale - hauteur de la navbar */
-      background-color: #f5f5f5;
-      padding: 24px 16px;
-    }
-    
-    /* Carte du formulaire */
-    mat-card {
-      width: 100%;
       max-width: 500px;
-      margin: 0;
-      padding: 32px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      overflow: hidden;
     }
 
-    /* En-tête de la carte */
-    mat-card-header {
-      margin-bottom: 32px;
-      padding: 0;
+    .register-content {
+      padding: 40px;
+    }
+
+    .register-title {
+      font-size: 2.5em;
+      color: #2c3e50;
+      margin: 0 0 10px;
       text-align: center;
-    }
-    
-    mat-card-title {
-      font-size: 24px;
-      font-weight: 500;
-      color: #3f51b5;
-      margin: 0;
+      font-weight: 700;
     }
 
-    /* Formulaire */
-    form {
+    .register-subtitle {
+      color: #666;
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+      line-height: 1.5;
+    }
+
+    .register-form {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 24px;
     }
 
-    /* Champs de formulaire */
-    mat-form-field {
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.95em;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    input {
+      padding: 12px 16px;
+      border: 2px solid #e1e8ed;
+      border-radius: 10px;
+      font-size: 1em;
+      transition: all 0.3s ease;
       width: 100%;
-      margin-bottom: 8px;
-      
-      /* Fond blanc pour les champs */
-      ::ng-deep .mat-form-field-outline {
-        background-color: white;
-        border-radius: 4px;
+      box-sizing: border-box;
+
+      &:focus {
+        outline: none;
+        border-color: #2196F3;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
       }
-      
-      /* Style du label */
-      ::ng-deep .mat-form-field-label {
-        color: rgba(0, 0, 0, 0.6);
+
+      &.error {
+        border-color: #e74c3c;
+      }
+
+      &::placeholder {
+        color: #95a5a6;
       }
     }
 
-    /* Conteneur du bouton */
-    .button-container {
-      margin-top: 24px;
-      
-      button[mat-raised-button] {
-        width: 100%;
-        height: 48px;
-        font-size: 16px;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-        
-        /* Désactiver l'effet de clic */
-        &:active:not([disabled]) {
-          transform: none;
-        }
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.85em;
+      margin-top: 4px;
+    }
+
+    .form-actions {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .submit-button {
+      width: 100%;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #2196F3, #1976D2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+      }
+
+      &:disabled {
+        background: #ccc;
+        cursor: not-allowed;
       }
     }
 
-    /* Contenu du bouton avec spinner */
     .button-content {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
     }
 
-    /* Messages d'erreur */
-    mat-error {
-      font-size: 12px;
-      margin-top: 4px;
-      line-height: 1.2;
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
     }
 
-    /* Styles responsives */
+    .login-link {
+      text-align: center;
+      color: #666;
+      margin: 0;
+
+      a {
+        color: #2196F3;
+        text-decoration: none;
+        font-weight: 500;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     @media (max-width: 600px) {
-      .register-container {
-        padding: 16px;
-        align-items: flex-start;
+      .register-page {
+        padding: 20px;
       }
-      
-      mat-card {
-        padding: 24px 16px;
-        margin-top: 0;
+
+      .register-content {
+        padding: 30px 20px;
       }
-      
-      mat-card-header {
-        margin-bottom: 24px;
-      }
-      
-      .button-container button[mat-raised-button] {
-        height: 44px;
+
+      .register-title {
+        font-size: 2em;
       }
     }
   `]
@@ -219,7 +298,13 @@ export class RegisterComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {}  onSubmit(): void {
+  ngOnInit(): void {}
+
+  onSubmit(): void {
+    if (this.registerForm.invalid) {
+      return;
+    }
+
     this.isLoading = true;
     const registerData = {
       ...this.registerForm.value,
@@ -229,9 +314,7 @@ export class RegisterComponent implements OnInit {
     this.registerService.register(registerData).subscribe({
       next: (response) => {
         this.isLoading = false;
-        console.log('Réponse du serveur:', response);
         if (response && response.keycloakLoginUrl) {
-          // Utiliser l'URL de redirection fournie par le backend
           window.location.href = response.keycloakLoginUrl;
         } else {
           this.snackBar.open(
@@ -240,12 +323,11 @@ export class RegisterComponent implements OnInit {
             { duration: 3000 }
           );
         }
-      },      error: (error: any) => {
+      },
+      error: (error: any) => {
         console.log('Erreur:', error);
         this.isLoading = false;
         if (error.status === 0 && error.error instanceof ProgressEvent) {
-          // Si c'est une erreur CORS mais que l'inscription a probablement réussi
-          // On redirige directement vers Keycloak avec une URL générée
           this.registerService.getLoginUrl().subscribe({
             next: (loginUrl: string) => {
               if (loginUrl) {
@@ -271,3 +353,4 @@ export class RegisterComponent implements OnInit {
     });
   }
 }
+

@@ -1,147 +1,187 @@
 :host {
   display: block;
   height: 64px;
-}
-
-.main-content {
-  padding: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Layout de base */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: var(--background);
-}
-
-/* Barre d'outils principale */
-.main-toolbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background-color: var(--nav-bg);
-  color: var(--nav-text);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: 64px;
+  }
   
-  .toolbar-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .main-content {
+    padding: 20px;
     width: 100%;
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 16px;
-    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
-}
 
-/* Logo de l'application */
-.app-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: rgb(6, 6, 6);
-  font-size: 1.25rem;
-  font-weight: 500;
-  text-decoration: none;
-  
-  mat-icon {
-    color: rgb(10, 10, 10);
+  /* Layout de base */
+  .app-container {
+    display: flex;
+    flex-direction: column;
+  min-height: 100vh;
+    background-color: var(--background);
   }
   
-  &:hover {
-    opacity: 0.9;
-  }
-}
-
-/* Liens de navigation */
-.nav-links {
-  display: flex;
-  gap: 8px;
-  margin-left: 32px;
-  height: 100%;
-  
-  a {
+  /* Barre d'outils principale */
+  .main-toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  z-index: 1000;
+    background-color: var(--nav-bg);
     color: var(--nav-text);
-    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 64px;
+    
+    .toolbar-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+    height: 100%;
+    }
+  }
+  
+  /* Logo de l'application */
+  .app-logo {
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-    height: 100%;
-    position: relative;
+    gap: 8px;
+    cursor: pointer;
+    color: rgb(6, 6, 6);
+    font-size: 1.25rem;
     font-weight: 500;
-    
-    &:hover {
-      background-color: var(--nav-hover);
-      color: var(--accent-color);
-    }
-    
-    &.active {
-      color: var(--accent-color);
-      
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 16px;
-        right: 16px;
-        height: 3px;
-        background-color: var(--accent-color);
-        border-radius: 3px 3px 0 0;
-      }
-    }
+    text-decoration: none;
     
     mat-icon {
-      margin-right: 8px;
-      font-size: 20px;
-      height: 20px;
-      width: 20px;
+      color: rgb(10, 10, 10);
+    }
+    
+    &:hover {
+      opacity: 0.9;
     }
   }
-}
-
-/* Section utilisateur */
-.user-section {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  height: 100%;
   
-  .loading-spinner {
-    margin-right: 16px;
-    color: var(--accent-color);
+  /* Liens de navigation */
+  .nav-links {
+    display: flex;
+    gap: 8px;
+    margin-left: 32px;
+    height: 100%;
+    
+    a {
+      color: var(--nav-text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      height: 100%;
+      position: relative;
+      font-weight: 500;
+      
+      &:hover {
+        background-color: var(--nav-hover);
+        color: var(--accent-color);
+      }
+      
+      &.active {
+        color: var(--accent-color);
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 16px;
+          right: 16px;
+          height: 3px;
+          background-color: var(--accent-color);
+          border-radius: 3px 3px 0 0;
+        }
+      }
+      
+      mat-icon {
+        margin-right: 8px;
+        font-size: 20px;
+        height: 20px;
+        width: 20px;
+      }
+    }
   }
   
-  .user-info {
+  /* Section utilisateur */
+  .user-section {
     display: flex;
     align-items: center;
-    gap: 16px;
+    margin-left: auto;
     height: 100%;
-    padding: 0 8px;
     
-    .welcome-text {
-      color: var(--nav-text);
-      font-size: 0.875rem;
-      font-weight: 500;
-      @media (max-width: 600px) {
-        display: none;
+    .loading-spinner {
+      margin-right: 16px;
+      color: var(--accent-color);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 100%;
+      padding: 0 8px;
+      
+      .welcome-text {
+        color: var(--nav-text);
+        font-size: 0.875rem;
+        font-weight: 500;
+        @media (max-width: 600px) {
+          display: none;
+        }
+      }
+      
+      button[mat-icon-button] {
+        color: var(--nav-text);
+        transition: all 0.3s ease;
+        
+        &:hover {
+          color: var(--accent-color);
+          background-color: var(--nav-hover);
+        }
+        
+        mat-icon {
+          font-size: 28px;
+          height: 28px;
+          width: 28px;
+          line-height: 28px;
+        }
       }
     }
     
-    button[mat-icon-button] {
-      color: var(--nav-text);
+    /* Style du bouton de connexion */
+    .login-button {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-weight: 500;
+      cursor: pointer;
       transition: all 0.3s ease;
+      
+      &:hover {
+        background-color: #2c387e; // Version plus foncée de #3f51b5
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+    }
+    
+    /* Style du bouton de déconnexion */
+    .logout-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--dark-text);
+      font-weight: 500;
+      margin-left: 16px;
       
       &:hover {
         color: var(--accent-color);
@@ -149,299 +189,259 @@
       }
       
       mat-icon {
-        font-size: 28px;
-        height: 28px;
-        width: 28px;
-        line-height: 28px;
+        font-size: 20px;
+        height: 20px;
+        width: 20px;
       }
     }
   }
   
-  /* Style du bouton de connexion */
-  .login-button {
-    background-color: var(--accent-color);
+  /* Contenu principal */
+  .main-content {
+    flex: 1;
+    margin-top: 64px;
+    padding: 24px;
+    max-width: 1200px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    
+    @media (max-width: 600px) {
+      padding: 16px;
+    }
+  }
+  
+  /* Bannière de bienvenue */
+  .welcome-banner {
+    background: linear-gradient(135deg, var(--primary-color), #5c6bc0);
     color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background-color: #2c387e; // Version plus foncée de #3f51b5
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-  }
-  
-  /* Style du bouton de déconnexion */
-  .logout-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--dark-text);
-    font-weight: 500;
-    margin-left: 16px;
-    
-    &:hover {
-      color: var(--accent-color);
-      background-color: var(--nav-hover);
-    }
-    
-    mat-icon {
-      font-size: 20px;
-      height: 20px;
-      width: 20px;
-    }
-  }
-}
-
-/* Contenu principal */
-.main-content {
-  flex: 1;
-  margin-top: 64px;
-  padding: 24px;
-  max-width: 1200px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  
-  @media (max-width: 600px) {
-    padding: 16px;
-  }
-}
-
-/* Bannière de bienvenue */
-.welcome-banner {
-  background: linear-gradient(135deg, var(--primary-color), #5c6bc0);
-  color: white;
-  padding: 32px 24px;
-  border-radius: 8px;
-  margin-bottom: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  
-  h1 {
-    margin: 0 0 8px 0;
-    font-size: 2rem;
-    font-weight: 500;
-    line-height: 1.2;
-  }
-  
-  p {
-    margin: 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
-  }
-  
-  @media (max-width: 600px) {
-    padding: 24px 16px;
+    padding: 32px 24px;
+    border-radius: 8px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     
     h1 {
-      font-size: 1.5rem;
+      margin: 0 0 8px 0;
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1.2;
     }
     
     p {
-      font-size: 1rem;
+      margin: 0;
+      font-size: 1.1rem;
+      opacity: 0.9;
     }
-  }
-}
-
-/* Pied de page */
-.app-footer {
-  background-color: var(--dark-text);
-  color: white;
-  padding: 16px 0;
-  margin-top: 32px;
-  
-  .footer-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 24px;
-    text-align: center;
-    font-size: 0.875rem;
-    opacity: 0.8;
-  }
-}
-
-/* Styles responsifs */
-@media (max-width: 959px) {
-  .main-toolbar {
-    .toolbar-content {
-      padding: 0 8px;
-    }
-  }
-  
-  .main-content {
-    margin-top: 56px;
-  }
-  
-  .nav-links {
-    margin-left: 12px;
     
-    a {
-      padding: 0 8px;
-      font-size: 0.875rem;
+    @media (max-width: 600px) {
+      padding: 24px 16px;
       
-      mat-icon {
-        margin-right: 4px;
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      p {
+        font-size: 1rem;
       }
     }
   }
-}
-
-/* Animation de chargement */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-spinner {
-  animation: spin 1s linear infinite;
-}
-
-/* Conteneur des boutons d'authentification */
-.auth-buttons-container {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  position: relative;
+  
+  /* Pied de page */
+  .app-footer {
+    background-color: var(--dark-text);
+    color: white;
+    padding: 16px 0;
+    margin-top: 32px;
+    
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      text-align: center;
+      font-size: 0.875rem;
+      opacity: 0.8;
+    }
+  }
+  
+  /* Styles responsifs */
+  @media (max-width: 959px) {
+    .main-toolbar {
+      .toolbar-content {
+        padding: 0 8px;
+      }
+    }
+    
+    .main-content {
+      margin-top: 56px;
+    }
+    
+    .nav-links {
+      margin-left: 12px;
+      
+      a {
+        padding: 0 8px;
+        font-size: 0.875rem;
+        
+        mat-icon {
+          margin-right: 4px;
+        }
+      }
+    }
+  }
+  
+  /* Animation de chargement */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
   
   .loading-spinner {
-    margin: 0 16px;
-  }
-}
-
-/* Styles pour les boutons d'authentification */
-.auth-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  padding: 0 12px;
-  height: 100%;
-  color: rgb(215, 12, 12);
-  
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    animation: spin 1s linear infinite;
   }
   
-  .button-text {
-    @media (max-width: 600px) {
-      display: none;
-    }
-  }
-  
-  mat-icon {
-    margin: 0;
-    width: 24px;
-    height: 24px;
-    font-size: 24px;
-  }
-}
-
-/* Indicateur de chargement */
-.loading-spinner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-  
-  mat-spinner {
-    width: 24px !important;
-    height: 24px !important;
-    
-    ::ng-deep circle {
-      stroke: white;
-    }
-  }
-}
-
-/* Amélioration du menu utilisateur */
-.user-menu {
-  .user-button {
+  /* Conteneur des boutons d'authentification */
+  .auth-buttons-container {
     display: flex;
     align-items: center;
-    gap: 8px;
     height: 100%;
-    color: white;
-    text-transform: none;
+    position: relative;
     
-    .user-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background-color: rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      
-      mat-icon {
-        color: rgb(6, 6, 6);
-      }
-      
-      .user-initials {
-        color: white;
-        font-weight: 500;
-      }
-      
-      &.large {
-        width: 48px;
-        height: 48px;
-        font-size: 24px;
-      }
+    .loading-spinner {
+      margin: 0 16px;
     }
-    
-    .user-info {
-      display: flex;
-      flex-direction: column;
-      text-align: left;
-      line-height: 1.2;
-      
-      .user-name {
-        font-weight: 500;
-      }
-      
-      .user-email {
-        font-size: 12px;
-        opacity: 0.8;
-      }
-    }
-  }
-}
-
-/* Styles pour le menu déroulant utilisateur */
-.user-dropdown {
-  .user-dropdown-header {
-    display: flex;
-    align-items: center;
-    padding: 16px;
-    gap: 12px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    margin-bottom: 8px;
   }
   
-  .mat-menu-item {
+  /* Styles pour les boutons d'authentification */
+  .auth-button {
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: all 0.3s ease;
+    padding: 0 12px;
+    height: 100%;
+    color: rgb(215, 12, 12);
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .button-text {
+      @media (max-width: 600px) {
+        display: none;
+      }
+    }
     
     mat-icon {
-      margin-right: 0;
+      margin: 0;
+      width: 24px;
+      height: 24px;
+      font-size: 24px;
     }
   }
-}
-
-/* Bouton de déconnexion dans la barre latérale */
-.sidenav-footer {
-  padding: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
   
-  .logout-button {
-    width: 100%;
-    justify-content: flex-start;
+  /* Indicateur de chargement */
+  .loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 0 16px;
     
-    mat-icon {
-      margin-right: 8px;
+    mat-spinner {
+      width: 24px !important;
+      height: 24px !important;
+      
+      ::ng-deep circle {
+        stroke: white;
+      }
     }
   }
-}
+  
+  /* Amélioration du menu utilisateur */
+  .user-menu {
+    .user-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 100%;
+      color: white;
+      text-transform: none;
+      
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        mat-icon {
+          color: rgb(6, 6, 6);
+        }
+        
+        .user-initials {
+          color: white;
+          font-weight: 500;
+        }
+        
+        &.large {
+          width: 48px;
+          height: 48px;
+          font-size: 24px;
+        }
+      }
+      
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        line-height: 1.2;
+        
+        .user-name {
+          font-weight: 500;
+        }
+        
+        .user-email {
+          font-size: 12px;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+  
+  /* Styles pour le menu déroulant utilisateur */
+  .user-dropdown {
+    .user-dropdown-header {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      gap: 12px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      margin-bottom: 8px;
+    }
+    
+    .mat-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      mat-icon {
+        margin-right: 0;
+      }
+    }
+  }
+  
+  /* Bouton de déconnexion dans la barre latérale */
+  .sidenav-footer {
+    padding: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    
+    .logout-button {
+      width: 100%;
+      justify-content: flex-start;
+      padding: 0 16px;
+      
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
+  }

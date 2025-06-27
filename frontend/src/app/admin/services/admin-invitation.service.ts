@@ -16,7 +16,7 @@ export interface InvitationDetails {
   providedIn: 'root'
 })
 export class AdminInvitationService {
-  private apiUrl = '/api/invitations';
+  private apiUrl = '/invitations';
 
   constructor(private http: HttpClient) {}
 

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, HostListener, Renderer2, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -38,6 +38,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   isLoading = false;
   roles: string[] = [];
   currentYear = new Date().getFullYear();
+  isScrolled = false;
   
   private destroy$ = new Subject<void>();
   private breakpointObserver = inject(BreakpointObserver);
@@ -45,7 +46,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private authManager: AuthManagerService
+    private authManager: AuthManagerService,
+    private renderer: Renderer2,
+    private el: ElementRef
   ) {
     // Watch for screen size changes
     this.breakpointObserver.observe([
@@ -62,6 +65,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
         this.isMenuOpen = true;
       }
     });
+  }
+
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const toolbar = this.el.nativeElement.querySelector('.main-toolbar');
+    
+    if (scrollPosition > 10) {
+      this.renderer.addClass(toolbar, 'scrolled');
+    } else {
+      this.renderer.removeClass(toolbar, 'scrolled');
+    }
   }
 
   async ngOnInit() {

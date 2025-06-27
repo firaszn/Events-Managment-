@@ -18,6 +18,7 @@ export interface EventResponse {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  userRegistered: boolean;
 }
 
 @Injectable({

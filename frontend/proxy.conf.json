@@ -1,6 +1,6 @@
 {
-  "/api/invitations": {
-    "target": "http://localhost:8083",
+  "/invitations": {
+    "target": "http://localhost:8093",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

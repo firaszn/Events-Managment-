@@ -22,7 +22,7 @@ export interface InvitationResponse {
   providedIn: 'root'
 })
 export class InvitationService {
-  private apiUrl = '/api/invitations';
+  private apiUrl = '/invitations';
 
   constructor(private http: HttpClient) {}
 

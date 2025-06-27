@@ -96,14 +96,7 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Feign OAuth2 -->
-		<dependency>
-			<groupId>io.github.openfeign</groupId>
-			<artifactId>feign-oauth2</artifactId>
-			<version>12.1</version>
-		</dependency>
-
-		<!-- Remplacer la dépendance problématique -->
+		<!-- OAuth2 Client -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-client</artifactId>

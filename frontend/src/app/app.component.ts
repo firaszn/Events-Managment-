@@ -18,6 +18,7 @@ import { AuthService } from '../app/user/core/services/auth.service';
 import { KeycloakProfile } from 'keycloak-js';
 import { FooterComponent } from './user/components/footer/footer.component';
 import { NavbarComponent } from './user/components/navbar/navbar.component';
+import { NotificationComponent } from './notification/components/notification.component';
 
 @Component({
   selector: 'app-root',
@@ -35,11 +36,13 @@ import { NavbarComponent } from './user/components/navbar/navbar.component';
     MatTooltipModule,
     MatProgressSpinnerModule,
     FooterComponent,
-    NavbarComponent
+    NavbarComponent,
+    NotificationComponent
   ],
   template: `
     <div class="app-container">
       <app-navbar *ngIf="!hideNavbar"></app-navbar>
+      <app-notification></app-notification>
       <main [class.with-navbar]="!hideNavbar">
         <router-outlet></router-outlet>
       </main>

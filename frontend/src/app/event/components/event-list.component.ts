@@ -4,13 +4,17 @@ import { EventService, EventResponse } from '../services/event.service';
 import { InvitationService } from '../../invitation/services/invitation.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../user/core/services/auth.service';
+import { NotificationService } from '../../notification/services/notification.service';
+import { NotificationComponent } from '../../notification/components/notification.component';
 
 @Component({
   selector: 'app-event-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NotificationComponent],
   template: `
     <div class="events-page">
+      <app-notification></app-notification>
+      
       <!-- Header Section -->
       <div class="events-header">
         <h1>Découvrez nos événements</h1>
@@ -74,11 +78,14 @@ import { AuthService } from '../../user/core/services/auth.service';
             <div class="event-footer">
               <button 
                 class="custom-button"
+                [class.registered]="event.userRegistered"
                 [disabled]="isPast(event.eventDate)"
                 (click)="registerForEvent(event)"
                 *ngIf="isLoggedIn && !isAdmin">
-                <i class="fas fa-calendar-check"></i>
-                S'inscrire              </button>
+                <i class="fas" [class.fa-calendar-check]="!event.userRegistered" [class.fa-check-circle]="event.userRegistered"></i>
+                <span *ngIf="event.userRegistered">Déjà inscrit</span>
+                <span *ngIf="!event.userRegistered">S'inscrire</span>
+              </button>
             </div>
           </div>
         </div>
@@ -311,6 +318,47 @@ import { AuthService } from '../../user/core/services/auth.service';
         font-size: 2em;
       }
     }
+
+    .custom-button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #2196F3;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 1rem;
+    }
+
+    .custom-button:disabled {
+      background-color: #E0E0E0;
+      color: #9E9E9E;
+      cursor: not-allowed;
+    }
+
+    .custom-button.registered {
+      background-color: #4CAF50;
+      cursor: default;
+    }
+
+    .custom-button:not(:disabled):not(.registered):hover {
+      background-color: #1976D2;
+      transform: translateY(-1px);
+    }
+
+    .custom-button i {
+      font-size: 1.2em;
+    }
+
+    .custom-button.registered i {
+      color: white;
+    }
   `]
 })
 export class EventListComponent implements OnInit {
@@ -332,7 +380,8 @@ export class EventListComponent implements OnInit {
   constructor(
     private eventService: EventService,
     private invitationService: InvitationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private notificationService: NotificationService
   ) {}
 
   async ngOnInit() {
@@ -353,7 +402,11 @@ export class EventListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading events:', error);
-        this.error = 'Une erreur est survenue lors du chargement des événements.';
+        this.notificationService.show({
+          message: 'Une erreur est survenue lors du chargement des événements.',
+          type: 'error',
+          duration: 5000
+        });
       }
     });
   }
@@ -398,7 +451,11 @@ export class EventListComponent implements OnInit {
 
   registerForEvent(event: EventResponse) {
     if (!this.isLoggedIn || !this.userEmail) {
-      this.error = 'Veuillez vous connecter pour vous inscrire à un événement.';
+      this.notificationService.show({
+        message: 'Veuillez vous connecter pour vous inscrire à un événement.',
+        type: 'error',
+        duration: 5000
+      });
       return;
     }
 
@@ -410,8 +467,12 @@ export class EventListComponent implements OnInit {
 
     this.invitationService.createInvitation(request).subscribe({
       next: () => {
-        this.error = '';
-        // Ajouter une notification de succès ici si nécessaire
+        event.userRegistered = true;
+        this.notificationService.show({
+          message: `Inscription confirmée pour l'événement : ${event.title}`,
+          type: 'success',
+          duration: 5000
+        });
       },
       error: (error) => {
         console.error('Error registering for event:', error);
@@ -423,7 +484,11 @@ export class EventListComponent implements OnInit {
           errorMessage = 'Erreur de communication avec le serveur. Veuillez réessayer.';
         }
         
-        this.error = errorMessage;
+        this.notificationService.show({
+          message: errorMessage,
+          type: 'error',
+          duration: 5000
+        });
       }
     });
   }
@@ -431,29 +496,35 @@ export class EventListComponent implements OnInit {
   isUpcoming(dateString: string): boolean {
     const eventDate = new Date(dateString);
     const now = new Date();
-    return eventDate > now;
+    // Réinitialiser les heures pour comparer uniquement les dates
+    const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return eventDateOnly > nowDateOnly;
   }
 
   isOngoing(dateString: string): boolean {
     const eventDate = new Date(dateString);
     const now = new Date();
-    const endDate = new Date(eventDate);
-    endDate.setHours(endDate.getHours() + 2); // Assuming events last 2 hours
-    return now >= eventDate && now <= endDate;
+    
+    // Vérifier si c'est le même jour en comparant année, mois et jour
+    return eventDate.getFullYear() === now.getFullYear() &&
+           eventDate.getMonth() === now.getMonth() &&
+           eventDate.getDate() === now.getDate();
   }
 
   isPast(dateString: string): boolean {
     const eventDate = new Date(dateString);
     const now = new Date();
-    const endDate = new Date(eventDate);
-    endDate.setHours(endDate.getHours() + 2); // Assuming events last 2 hours
-    return now > endDate;
+    // Réinitialiser les heures pour comparer uniquement les dates
+    const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return eventDateOnly < nowDateOnly;
   }
 
   getEventStatus(dateString: string): string {
     if (this.isUpcoming(dateString)) return 'À venir';
     if (this.isOngoing(dateString)) return 'En cours';
-    return 'Terminé';
+    return 'Passé';
   }
 
   formatDateDay(dateString: string): string {

@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "invitations", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"event_id", "user_email"})
+    @UniqueConstraint(columnNames = {"event_id", "user_email"}),
+    @UniqueConstraint(columnNames = {"event_id", "seat_row", "seat_number"})
 })
 @Data
 @Builder
@@ -33,6 +34,13 @@ public class InvitationEntity {
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private InvitationStatus status;
+
+    @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "row", column = @Column(name = "seat_row")),
+        @AttributeOverride(name = "number", column = @Column(name = "seat_number"))
+    })
+    private SeatInfo seatInfo;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

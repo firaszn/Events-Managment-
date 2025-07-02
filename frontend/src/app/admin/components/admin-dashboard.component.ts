@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -6,14 +6,19 @@ import { AdminUserService, UserDetails } from '../services/admin-user.service';
 import { AuthManagerService } from '../../user/core/services/auth-manager.service';
 import { AdminEventService, EventDetails } from '../services/admin-event.service';
 import { AdminInvitationService, InvitationDetails } from '../services/admin-invitation.service';
+import { Subscription } from 'rxjs';
+import { NotificationService } from '../../notification/services/notification.service';
+import { NotificationComponent } from '../../notification/components/notification.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NotificationComponent],
   styleUrls: ['./admin-dashboard.component.scss'],
   template: `
     <div class="admin-dashboard">
+      <app-notification></app-notification>
+      
       <!-- Sidebar -->
       <div class="sidebar" [class.collapsed]="isSidebarCollapsed">
         <div class="sidebar-header">
@@ -74,33 +79,33 @@ import { AdminInvitationService, InvitationDetails } from '../services/admin-inv
         <div class="stats-container">
           <div class="stat-card">
             <div class="stat-icon total">
-              <i class="fas fa-users"></i>
+              <i class="fas" [class.fa-users]="activeMenu === 'users'" [class.fa-calendar]="activeMenu === 'events'" [class.fa-envelope]="activeMenu === 'invitations'"></i>
             </div>
             <div class="stat-info">
-              <h3>{{ getTotalUsers() }}</h3>
-              <p>Total Utilisateurs</p>
+              <h3>{{ getStatsValue() }}</h3>
+              <p>{{ getStatsTitle() }}</p>
               <span class="trend up">↑ 12% ce mois</span>
             </div>
           </div>
 
           <div class="stat-card">
             <div class="stat-icon active">
-              <i class="fas fa-user-check"></i>
+              <i class="fas" [class.fa-user-check]="activeMenu === 'users'" [class.fa-calendar-check]="activeMenu === 'events'" [class.fa-envelope-open]="activeMenu === 'invitations'"></i>
             </div>
             <div class="stat-info">
-              <h3>{{ getActiveUsers() }}</h3>
-              <p>Utilisateurs Actifs</p>
+              <h3>{{ getActiveStatsValue() }}</h3>
+              <p>{{ getActiveStatsTitle() }}</p>
               <span class="trend up">↑ 8% ce mois</span>
             </div>
           </div>
 
           <div class="stat-card">
             <div class="stat-icon inactive">
-              <i class="fas fa-user-times"></i>
+              <i class="fas" [class.fa-user-times]="activeMenu === 'users'" [class.fa-calendar-times]="activeMenu === 'events'" [class.fa-envelope-open-text]="activeMenu === 'invitations'"></i>
             </div>
             <div class="stat-info">
-              <h3>{{ getInactiveUsers() }}</h3>
-              <p>Utilisateurs Inactifs</p>
+              <h3>{{ getInactiveStatsValue() }}</h3>
+              <p>{{ getInactiveStatsTitle() }}</p>
               <span class="trend down">↓ 3% ce mois</span>
             </div>
           </div>
@@ -108,7 +113,8 @@ import { AdminInvitationService, InvitationDetails } from '../services/admin-inv
 
         <!-- Table Section -->
         <div class="table-container">
-          <table>
+          <!-- Users Table -->
+          <table *ngIf="activeMenu === 'users'">
             <thead>
               <tr>
                 <th>Utilisateur</th>
@@ -144,47 +150,137 @@ import { AdminInvitationService, InvitationDetails } from '../services/admin-inv
               </tr>
             </tbody>
           </table>
+
+          <!-- Events Table -->
+          <table *ngIf="activeMenu === 'events'">
+            <thead>
+              <tr>
+                <th>Titre</th>
+                <th>Description</th>
+                <th>Lieu</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let event of events">
+                <td>{{ event.title }}</td>
+                <td>{{ event.description }}</td>
+                <td>{{ event.location }}</td>
+                <td>{{ event.eventDate | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="actions">
+                  <button class="action-btn edit" (click)="editEvent(event)" title="Modifier">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="action-btn delete" (click)="deleteEvent(event)" title="Supprimer">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Invitations Table -->
+          <div class="table-container" *ngIf="activeMenu === 'invitations'">
+            <table>
+              <thead>
+                <tr>
+                  <th>ÉVÉNEMENT</th>
+                  <th>UTILISATEUR</th>
+                  <th>STATUT</th>
+                  <th>PLACE</th>
+                  <th>DATE D'ENVOI</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let invitation of invitations">
+                  <td>{{ invitation.eventTitle }}</td>
+                  <td>{{ invitation.userEmail }}</td>
+                  <td>
+                    <button 
+                      [class.confirmed-button]="invitation.status === 'CONFIRMED'"
+                      [class.confirm-button]="invitation.status !== 'CONFIRMED'"
+                      (click)="confirmInvitation(invitation.id)"
+                      [disabled]="invitation.status === 'CONFIRMED'">
+                      {{ invitation.status === 'CONFIRMED' ? 'Confirmé' : 'Confirmer' }}
+                    </button>
+                  </td>
+                  <td>
+                    <span *ngIf="invitation.seatInfo">
+                      Rangée {{ invitation.seatInfo.row }}, Place {{ invitation.seatInfo.number }}
+                    </span>
+                    <span *ngIf="!invitation.seatInfo">-</span>
+                  </td>
+                  <td>{{ formatDate(invitation.createdAt) }}</td>
+                  <td>
+                    <button class="delete-btn" (click)="deleteInvitation(invitation.id)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   `
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   activeMenu: 'users' | 'events' | 'invitations' = 'users';
   isSidebarCollapsed = false;
   users: UserDetails[] = [];
   events: EventDetails[] = [];
   invitations: InvitationDetails[] = [];
+  private subscription: Subscription = new Subscription();
   newEvent: Partial<EventDetails> = {};
 
   constructor(
     private router: Router,
     private adminUserService: AdminUserService,
-    private authManager: AuthManagerService,
     private adminEventService: AdminEventService,
-    private adminInvitationService: AdminInvitationService
+    private adminInvitationService: AdminInvitationService,
+    private authManager: AuthManagerService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit() {
     this.loadInitialData();
   }
 
-  toggleSidebar() {
-    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   loadInitialData() {
-    switch (this.activeMenu) {
-      case 'users':
-        this.loadUsers();
-        break;
-      case 'events':
-        this.loadEvents();
-        break;
-      case 'invitations':
-        this.loadInvitations();
-        break;
-    }
+    this.loadUsers();
+    this.loadEvents();
+    this.subscribeToInvitations();
+  }
+
+  private subscribeToInvitations() {
+    this.subscription.add(
+      this.adminInvitationService.getRefreshObservable().subscribe({
+        next: (invitations) => {
+          this.invitations = invitations.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        },
+        error: (error) => {
+          console.error('Error loading invitations:', error);
+          this.notificationService.show({
+            message: 'Erreur lors du chargement des invitations',
+            type: 'error',
+            duration: 5000
+          });
+        }
+      })
+    );
+  }
+
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
   }
 
   loadUsers() {
@@ -209,31 +305,22 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  loadInvitations() {
-    this.adminInvitationService.getInvitations().subscribe({
-      next: (invitations) => {
-        this.invitations = invitations;
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des invitations:', error);
-      }
-    });
-  }
-
   refreshData() {
+    switch (this.activeMenu) {
+      case 'users':
     this.loadUsers();
-  }
-
-  refreshEvents() {
+        break;
+      case 'events':
     this.loadEvents();
+        break;
   }
-
-  refreshInvitations() {
-    this.loadInvitations();
   }
 
   onSearch(event: any) {
     const searchTerm = event.target.value.toLowerCase();
+    
+    switch (this.activeMenu) {
+      case 'users':
     if (searchTerm) {
       this.users = this.users.filter(user => 
         user.username.toLowerCase().includes(searchTerm) ||
@@ -243,6 +330,33 @@ export class AdminDashboardComponent implements OnInit {
       );
     } else {
       this.loadUsers();
+        }
+        break;
+
+      case 'events':
+        if (searchTerm) {
+          this.events = this.events.filter(event => 
+            event.title.toLowerCase().includes(searchTerm) ||
+            event.description.toLowerCase().includes(searchTerm) ||
+            event.location.toLowerCase().includes(searchTerm) ||
+            event.organizer?.toLowerCase().includes(searchTerm)
+          );
+        } else {
+          this.loadEvents();
+        }
+        break;
+
+      case 'invitations':
+        if (searchTerm) {
+          this.invitations = this.invitations.filter(invitation => 
+            invitation.eventTitle.toLowerCase().includes(searchTerm) ||
+            invitation.userEmail.toLowerCase().includes(searchTerm) ||
+            invitation.status.toLowerCase().includes(searchTerm)
+          );
+        } else {
+          this.subscribeToInvitations();
+        }
+        break;
     }
   }
 
@@ -267,6 +381,84 @@ export class AdminDashboardComponent implements OnInit {
     return this.users.filter(user => !user.enabled).length;
   }
 
+  getStatsTitle(): string {
+    switch (this.activeMenu) {
+      case 'users':
+        return 'Total Utilisateurs';
+      case 'events':
+        return 'Total Événements';
+      case 'invitations':
+        return 'Total Invitations';
+      default:
+        return '';
+    }
+  }
+
+  getStatsValue(): number {
+    switch (this.activeMenu) {
+      case 'users':
+        return this.users.length;
+      case 'events':
+        return this.events.length;
+      case 'invitations':
+        return this.invitations.length;
+      default:
+        return 0;
+    }
+  }
+
+  getActiveStatsTitle(): string {
+    switch (this.activeMenu) {
+      case 'users':
+        return 'Utilisateurs Actifs';
+      case 'events':
+        return 'Événements à venir';
+      case 'invitations':
+        return 'Invitations Acceptées';
+      default:
+        return '';
+    }
+  }
+
+  getActiveStatsValue(): number {
+    switch (this.activeMenu) {
+      case 'users':
+        return this.users.filter(user => user.enabled).length;
+      case 'events':
+        return this.events.filter(event => this.isUpcoming(event.eventDate)).length;
+      case 'invitations':
+        return this.invitations.filter(inv => inv.status === 'ACCEPTED').length;
+      default:
+        return 0;
+    }
+  }
+
+  getInactiveStatsTitle(): string {
+    switch (this.activeMenu) {
+      case 'users':
+        return 'Utilisateurs Inactifs';
+      case 'events':
+        return 'Événements passés';
+      case 'invitations':
+        return 'Invitations En attente';
+      default:
+        return '';
+    }
+  }
+
+  getInactiveStatsValue(): number {
+    switch (this.activeMenu) {
+      case 'users':
+        return this.users.filter(user => !user.enabled).length;
+      case 'events':
+        return this.events.filter(event => this.isPast(event.eventDate)).length;
+      case 'invitations':
+        return this.invitations.filter(inv => inv.status === 'PENDING').length;
+      default:
+        return 0;
+    }
+  }
+
   isUserEnabled(user: UserDetails): boolean {
     return user.enabled;
   }
@@ -279,6 +471,12 @@ export class AdminDashboardComponent implements OnInit {
 
   setActiveMenu(menu: 'users' | 'events' | 'invitations') {
     this.activeMenu = menu;
+    if (menu === 'users') {
+      this.loadUsers();
+    } else if (menu === 'events') {
+      this.loadEvents();
+    }
+    // No need to load invitations here as they are automatically updated through polling
   }
 
   toggleUserStatus(user: UserDetails) {
@@ -309,7 +507,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   createEvent() {
-    if (this.newEvent.title && this.newEvent.description && this.newEvent.location && this.newEvent.date) {
+    if (this.newEvent.title && this.newEvent.description && this.newEvent.location && this.newEvent.eventDate) {
       this.adminEventService.createEvent(this.newEvent).subscribe({
         next: () => {
           this.loadEvents();
@@ -335,17 +533,52 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  deleteInvitation(invitation: InvitationDetails) {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer cette invitation ?`)) {
-      this.adminInvitationService.deleteInvitation(invitation.id).subscribe({
+  deleteInvitation(invitationId: number) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette invitation ?')) {
+      this.adminInvitationService.deleteInvitation(invitationId).subscribe({
         next: () => {
-          this.invitations = this.invitations.filter(i => i.id !== invitation.id);
+          this.invitations = this.invitations.filter(i => i.id !== invitationId);
+          this.notificationService.show({
+            message: 'Invitation supprimée avec succès',
+            type: 'success',
+            duration: 5000
+          });
+          this.adminInvitationService.triggerRefresh();
         },
         error: (error) => {
-          console.error('Erreur lors de la suppression de l\'invitation:', error);
+          console.error('Error deleting invitation:', error);
+          this.notificationService.show({
+            message: 'Erreur lors de la suppression de l\'invitation',
+            type: 'error',
+            duration: 5000
+          });
         }
       });
     }
+  }
+
+  confirmInvitation(invitationId: number) {
+    this.adminInvitationService.confirmInvitation(invitationId).subscribe({
+      next: (updatedInvitation) => {
+        const index = this.invitations.findIndex(i => i.id === invitationId);
+        if (index !== -1) {
+          this.invitations[index] = updatedInvitation;
+        }
+        this.notificationService.show({
+          message: 'Invitation confirmée avec succès',
+          type: 'success',
+          duration: 5000
+        });
+      },
+      error: (error) => {
+        console.error('Error confirming invitation:', error);
+        this.notificationService.show({
+          message: 'Erreur lors de la confirmation de l\'invitation',
+          type: 'error',
+          duration: 5000
+        });
+      }
+    });
   }
 
   getContentTitle(): string {
@@ -394,5 +627,49 @@ export class AdminDashboardComponent implements OnInit {
       // Rediriger quand même en cas d'erreur
       this.router.navigate(['/login']);
     }
+  }
+
+  editEvent(event: EventDetails) {
+    // Implémenter la logique de modification
+    console.log('Édition de l\'événement:', event);
+  }
+
+  isUpcoming(dateString: string): boolean {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    // Réinitialiser les heures pour comparer uniquement les dates
+    const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return eventDateOnly > nowDateOnly;
+  }
+
+  isOngoing(dateString: string): boolean {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    
+    // Vérifier si c'est le même jour en comparant année, mois et jour
+    return eventDate.getFullYear() === now.getFullYear() &&
+           eventDate.getMonth() === now.getMonth() &&
+           eventDate.getDate() === now.getDate();
+  }
+
+  isPast(dateString: string): boolean {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    // Réinitialiser les heures pour comparer uniquement les dates
+    const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return eventDateOnly < nowDateOnly;
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 }

@@ -1,5 +1,6 @@
 package com.example.invitationservice.model;
 
+import com.example.invitationservice.entity.SeatInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,7 @@ public class InvitationResponse {
     private String eventTitle;
     private String userEmail;
     private String status;
+    private SeatInfo seatInfo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

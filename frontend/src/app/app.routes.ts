@@ -6,6 +6,7 @@ import { AuthGuard } from './user/core/guards/auth.guard';
 import { AdminGuard } from './user/core/guards/admin.guard';
 import { EventListComponent } from './event/components/event-list.component';
 import { AdminDashboardComponent } from './admin/components/admin-dashboard.component';
+import { SeatSelectionComponent } from './event/components/seat-selection.component';
 
 export const routes: Routes = [
   {
@@ -30,6 +31,11 @@ export const routes: Routes = [
   {
     path: 'events',
     component: EventListComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'events/:id/select-seat',
+    component: SeatSelectionComponent,
     canActivate: [AuthGuard]
   },
   {

@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../user/core/services/auth.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import { NotificationComponent } from '../../notification/components/notification.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-event-list',
@@ -79,7 +80,7 @@ import { NotificationComponent } from '../../notification/components/notificatio
               <button 
                 class="custom-button"
                 [class.registered]="event.userRegistered"
-                [disabled]="isPast(event.eventDate)"
+                [disabled]="isPast(event.eventDate) || event.userRegistered"
                 (click)="registerForEvent(event)"
                 *ngIf="isLoggedIn && !isAdmin">
                 <i class="fas" [class.fa-calendar-check]="!event.userRegistered" [class.fa-check-circle]="event.userRegistered"></i>
@@ -320,10 +321,9 @@ import { NotificationComponent } from '../../notification/components/notificatio
     }
 
     .custom-button {
-      width: 100%;
-      padding: 12px;
+      padding: 10px 20px;
+      border-radius: 25px;
       border: none;
-      border-radius: 5px;
       background-color: #2196F3;
       color: white;
       font-weight: 500;
@@ -331,15 +331,13 @@ import { NotificationComponent } from '../../notification/components/notificatio
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 8px;
-      font-size: 1rem;
     }
 
     .custom-button:disabled {
-      background-color: #E0E0E0;
-      color: #9E9E9E;
+      background-color: #ccc;
       cursor: not-allowed;
+      opacity: 0.7;
     }
 
     .custom-button.registered {
@@ -347,17 +345,13 @@ import { NotificationComponent } from '../../notification/components/notificatio
       cursor: default;
     }
 
-    .custom-button:not(:disabled):not(.registered):hover {
-      background-color: #1976D2;
-      transform: translateY(-1px);
+    .custom-button.registered:disabled {
+      background-color: #4CAF50;
+      opacity: 0.8;
     }
 
     .custom-button i {
-      font-size: 1.2em;
-    }
-
-    .custom-button.registered i {
-      color: white;
+      font-size: 1.1em;
     }
   `]
 })
@@ -381,7 +375,8 @@ export class EventListComponent implements OnInit {
     private eventService: EventService,
     private invitationService: InvitationService,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private router: Router
   ) {}
 
   async ngOnInit() {
@@ -459,38 +454,8 @@ export class EventListComponent implements OnInit {
       return;
     }
 
-    const request = {
-      eventId: event.id,
-      eventTitle: event.title,
-      userEmail: this.userEmail
-    };
-
-    this.invitationService.createInvitation(request).subscribe({
-      next: () => {
-        event.userRegistered = true;
-        this.notificationService.show({
-          message: `Inscription confirmée pour l'événement : ${event.title}`,
-          type: 'success',
-          duration: 5000
-        });
-      },
-      error: (error) => {
-        console.error('Error registering for event:', error);
-        let errorMessage = 'Une erreur est survenue lors de l\'inscription.';
-        
-        if (error.error?.message) {
-          errorMessage = error.error.message;
-        } else if (error.status === 200 && !error.ok) {
-          errorMessage = 'Erreur de communication avec le serveur. Veuillez réessayer.';
-        }
-        
-        this.notificationService.show({
-          message: errorMessage,
-          type: 'error',
-          duration: 5000
-        });
-      }
-    });
+    // Rediriger vers la page de sélection des places
+    this.router.navigate(['/events', event.id, 'select-seat']);
   }
 
   isUpcoming(dateString: string): boolean {

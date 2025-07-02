@@ -7,10 +7,12 @@ export interface EventDetails {
   title: string;
   description: string;
   location: string;
-  date: string;
+  eventDate: string;
   organizer?: string;
+  organizerId?: string;
   created_at?: string;
   updated_at?: string;
+  userRegistered?: boolean;
 }
 
 @Injectable({

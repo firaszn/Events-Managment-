@@ -13,4 +13,5 @@ public class InvitationRequest {
     private String eventId;
     private String userEmail;
     private String eventTitle;
+    private SeatInfoRequest seatInfo;
 } 

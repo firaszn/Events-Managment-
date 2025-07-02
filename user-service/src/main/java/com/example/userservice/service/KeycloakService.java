@@ -139,18 +139,34 @@ public class KeycloakService {
 
     public UserRepresentation getUserByEmail(String email) {
         try {
+            log.info("Recherche de l'utilisateur avec l'email: {}", email);
             Keycloak keycloak = getKeycloakInstance();
             RealmResource realmResource = keycloak.realm(realm);
             UsersResource usersResource = realmResource.users();
 
-            List<UserRepresentation> users = usersResource.search(email, true);
+            // Rechercher par email exact
+            List<UserRepresentation> users = usersResource.search(null, null, null, email, 0, 1);
             
             if (!users.isEmpty()) {
-                return users.get(0);
+                UserRepresentation user = users.get(0);
+                log.info("Utilisateur trouvé - ID: {}, Email: {}, Username: {}", 
+                    user.getId(), user.getEmail(), user.getUsername());
+                return user;
+            } else {
+                log.warn("Aucun utilisateur trouvé avec l'email: {}", email);
+                // Essayer une recherche plus large
+                users = usersResource.search(email, 0, 1);
+                if (!users.isEmpty()) {
+                    UserRepresentation user = users.get(0);
+                    log.info("Utilisateur trouvé avec recherche élargie - ID: {}, Email: {}, Username: {}", 
+                        user.getId(), user.getEmail(), user.getUsername());
+                    return user;
+                }
             }
+            log.warn("Aucun utilisateur trouvé même avec recherche élargie pour: {}", email);
             return null;
         } catch (Exception e) {
-            log.error("Erreur lors de la recherche de l'utilisateur: {}", e.getMessage());
+            log.error("Erreur lors de la recherche de l'utilisateur {}: {}", email, e.getMessage(), e);
             return null;
         }
     }

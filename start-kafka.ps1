@@ -19,11 +19,11 @@ Set-Content "$KAFKA_CONFIG\zookeeper.properties" $zookeeperProperties
 
 Write-Host "Configuration terminée. Démarrage des services..."
 
-# Démarrer Zookeeper
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd $KAFKA_HOME; .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties"
+# Démarrer Zookeeper en arrière-plan
+Start-Process -FilePath "C:\kafka_2.13-3.6.1\bin\windows\zookeeper-server-start.bat" -ArgumentList "C:\kafka_2.13-3.6.1\config\zookeeper.properties" -WindowStyle Hidden
 
-# Attendre que Zookeeper soit démarré
+# Attendre que Zookeeper soit complètement démarré
 Start-Sleep -Seconds 10
 
-# Démarrer Kafka
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd $KAFKA_HOME; .\bin\windows\kafka-server-start.bat .\config\server.properties" 
+# Démarrer Kafka en arrière-plan
+Start-Process -FilePath "C:\kafka_2.13-3.6.1\bin\windows\kafka-server-start.bat" -ArgumentList "C:\kafka_2.13-3.6.1\config\server.properties" -WindowStyle Hidden 

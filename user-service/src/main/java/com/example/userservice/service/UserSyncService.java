@@ -24,52 +24,124 @@ public class UserSyncService {
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
     private final PasswordEncoder passwordEncoder;
+    private static final int MAX_RETRIES = 5;
+    private static final long INITIAL_RETRY_DELAY_MS = 2000; // 2 secondes
 
     /**
      * Synchronise un utilisateur depuis Keycloak vers PostgreSQL
      */
     @Transactional
     public UserEntity syncUserFromKeycloak(String email) {
-        try {
-            // Récupérer l'utilisateur depuis Keycloak
-            UserRepresentation keycloakUser = keycloakService.getUserByEmail(email);
-            if (keycloakUser == null) {
-                log.warn("Utilisateur {} non trouvé dans Keycloak", email);
-                return null;
-            }
+        UserRepresentation keycloakUser = null;
+        Exception lastException = null;
 
+        // Tentatives de récupération de l'utilisateur Keycloak avec délai exponentiel
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                if (attempt > 1) {
+                    // Délai exponentiel : 2s, 4s, 8s, 16s, 32s
+                    long delay = INITIAL_RETRY_DELAY_MS * (long) Math.pow(2, attempt - 2);
+                    log.info("Attente de {} secondes avant la tentative {} de récupération de l'utilisateur Keycloak", delay/1000, attempt);
+                    Thread.sleep(delay);
+                }
+
+                log.info("Tentative {} de récupération de l'utilisateur Keycloak: {}", attempt, email);
+                keycloakUser = keycloakService.getUserByEmail(email);
+                
+                if (keycloakUser != null) {
+                    log.info("Utilisateur trouvé dans Keycloak après {} tentative(s) - ID: {}, Email: {}", 
+                            attempt, keycloakUser.getId(), keycloakUser.getEmail());
+                    break;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Interruption lors de l'attente entre les tentatives", e);
+                throw new RuntimeException("Interruption lors de la synchronisation", e);
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Échec de la tentative {} de récupération de l'utilisateur Keycloak: {}", attempt, e.getMessage());
+                if (attempt == MAX_RETRIES) {
+                    log.error("Échec de toutes les tentatives de récupération de l'utilisateur Keycloak", e);
+                    throw new RuntimeException("Impossible de récupérer l'utilisateur depuis Keycloak après " + MAX_RETRIES + " tentatives", e);
+                }
+            }
+        }
+
+        if (keycloakUser == null) {
+            log.warn("Utilisateur {} non trouvé dans Keycloak après {} tentatives", email, MAX_RETRIES);
+            if (lastException != null) {
+                throw new RuntimeException("Échec de la récupération de l'utilisateur Keycloak: " + lastException.getMessage(), lastException);
+            }
+            return null;
+        }
+
+        try {
             // Vérifier s'il existe déjà en PostgreSQL
             Optional<UserEntity> existingUser = userRepository.findByEmail(email);
             if (existingUser.isPresent()) {
-                log.info("Utilisateur {} existe déjà en PostgreSQL", email);
-                return existingUser.get();
+                log.info("Utilisateur {} existe déjà en PostgreSQL - Mise à jour des informations", email);
+                UserEntity user = existingUser.get();
+                
+                // Mettre à jour les informations
+                user.setFirstName(keycloakUser.getFirstName());
+                user.setLastName(keycloakUser.getLastName());
+                user.setUsername(keycloakUser.getUsername());
+                user.setEnabled(keycloakUser.isEnabled());
+                user.setUpdatedAt(LocalDateTime.now());
+                
+                // Mettre à jour le rôle si nécessaire
+                List<String> userRoles = keycloakService.getUserRoles(keycloakUser.getId());
+                if (!userRoles.isEmpty()) {
+                    String primaryRole = userRoles.get(0);
+                    try {
+                        user.setRole(UserEntity.Role.valueOf(primaryRole.toUpperCase()));
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Rôle invalide {} pour l'utilisateur {}, utilisation du rôle USER par défaut", primaryRole, email);
+                        user.setRole(UserEntity.Role.USER);
+                    }
+                }
+                
+                UserEntity updatedUser = userRepository.save(user);
+                log.info("Utilisateur {} mis à jour avec succès dans PostgreSQL", email);
+                return updatedUser;
             }
 
-            // Récupérer les rôles depuis Keycloak
+            // Créer un nouvel utilisateur dans PostgreSQL
+            log.info("Création d'un nouvel utilisateur dans PostgreSQL pour {}", email);
             List<String> userRoles = keycloakService.getUserRoles(keycloakUser.getId());
             String primaryRole = userRoles.isEmpty() ? "USER" : userRoles.get(0);
 
-            // Créer l'utilisateur en PostgreSQL
+            try {
+                UserEntity.Role role = UserEntity.Role.valueOf(primaryRole.toUpperCase());
+                log.info("Rôle assigné: {}", role);
+            } catch (IllegalArgumentException e) {
+                log.warn("Rôle invalide {}, utilisation du rôle USER par défaut", primaryRole);
+                primaryRole = "USER";
+            }
+
             UserEntity newUser = UserEntity.builder()
                     .firstName(keycloakUser.getFirstName())
                     .lastName(keycloakUser.getLastName())
                     .email(keycloakUser.getEmail())
-                    .username(keycloakUser.getUsername())
-                    .password(passwordEncoder.encode("KEYCLOAK_MANAGED")) // Mot de passe géré par Keycloak
-                    .role(UserEntity.Role.valueOf(primaryRole))
+                    .username(keycloakUser.getUsername() != null ? keycloakUser.getUsername() : keycloakUser.getEmail())
+                    .password(passwordEncoder.encode("KEYCLOAK_MANAGED"))
+                    .role(UserEntity.Role.valueOf(primaryRole.toUpperCase()))
                     .enabled(keycloakUser.isEnabled())
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
 
             UserEntity savedUser = userRepository.save(newUser);
-            log.info("Utilisateur {} synchronisé depuis Keycloak vers PostgreSQL", email);
+            log.info("Nouvel utilisateur {} créé avec succès dans PostgreSQL", email);
             
             return savedUser;
 
         } catch (Exception e) {
-            log.error("Erreur lors de la synchronisation de l'utilisateur {} depuis Keycloak: {}", email, e.getMessage());
-            return null;
+            log.error("Erreur lors de la synchronisation de l'utilisateur {} depuis Keycloak: {}", email, e.getMessage(), e);
+            for (StackTraceElement element : e.getStackTrace()) {
+                log.error(element.toString());
+            }
+            throw new RuntimeException("Erreur lors de la synchronisation: " + e.getMessage());
         }
     }
 

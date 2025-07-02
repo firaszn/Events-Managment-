@@ -7,12 +7,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="serverdiscover" />
         <module name="config-server" />
+        <module name="invitation-service" />
+        <module name="keycloak-event-listener" />
+        <module name="serverdiscover" />
         <module name="user-service" />
         <module name="ApiGateway" />
         <module name="notification-service" />
-        <module name="invitation-service" />
       </profile>
       <profile name="Annotation profile for Event Management Microservices" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />

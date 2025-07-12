@@ -4,6 +4,7 @@ import com.example.invitationservice.entity.InvitationEntity;
 import com.example.invitationservice.entity.InvitationStatus;
 import com.example.invitationservice.entity.SeatInfo;
 import com.example.invitationservice.model.InvitationRequest;
+import com.example.invitationservice.model.SeatInfoRequest;
 import com.example.invitationservice.repository.InvitationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -72,25 +73,45 @@ public class InvitationService {
                 .eventId(eventId)
                 .eventTitle(request.getEventTitle())
                 .userEmail(request.getUserEmail())
-                .status(InvitationStatus.CONFIRMED)
+                .status(InvitationStatus.PENDING)
                 .seatInfo(seatInfo)
                 .build();
 
         // Sauvegarder l'invitation
+        return invitationRepository.save(invitation);
+    }
+
+    @Transactional
+    public InvitationEntity confirmInvitation(Long invitationId) {
+        InvitationEntity invitation = invitationRepository.findById(invitationId)
+                .orElseThrow(() -> new RuntimeException("Invitation non trouvée"));
+
+        invitation.setStatus(InvitationStatus.CONFIRMED);
         invitation = invitationRepository.save(invitation);
 
-        // Publier le message Kafka
+        // Publier le message Kafka pour l'envoi de l'email
         try {
+            // Créer un objet pour le message Kafka
+            var request = new InvitationRequest();
+            request.setEventId(invitation.getEventId().toString());
+            request.setEventTitle(invitation.getEventTitle());
+            request.setUserEmail(invitation.getUserEmail());
+            if (invitation.getSeatInfo() != null) {
+                var seatInfoRequest = SeatInfoRequest.builder()
+                    .row(invitation.getSeatInfo().getRow())
+                    .number(invitation.getSeatInfo().getNumber())
+                    .build();
+                request.setSeatInfo(seatInfoRequest);
+            }
+
             // Convertir la requête en JSON string
             String jsonMessage = objectMapper.writeValueAsString(request);
             
             // Envoyer le message
             kafkaTemplate.send(invitationRespondedTopic, jsonMessage);
             
-            log.info("Message Kafka envoyé pour l'inscription de {} à l'événement {} - Place : Rangée {}, Numéro {}", 
-                    request.getUserEmail(), request.getEventTitle(), 
-                    seatInfo != null ? seatInfo.getRow() : "N/A", 
-                    seatInfo != null ? seatInfo.getNumber() : "N/A");
+            log.info("Message Kafka envoyé pour la confirmation de l'inscription de {} à l'événement {}", 
+                    invitation.getUserEmail(), invitation.getEventTitle());
             
             return invitation;
         } catch (Exception e) {
@@ -107,4 +128,19 @@ public class InvitationService {
                 .filter(seatInfo -> seatInfo != null)
                 .collect(Collectors.toList());
     }
-} 
+
+    @Transactional
+    public void deleteInvitation(Long invitationId) {
+        log.info("Suppression de l'invitation avec l'ID: {}", invitationId);
+
+        InvitationEntity invitation = invitationRepository.findById(invitationId)
+                .orElseThrow(() -> new RuntimeException("Invitation non trouvée avec l'ID: " + invitationId));
+
+        log.info("Suppression de l'invitation pour l'utilisateur {} et l'événement {}",
+                invitation.getUserEmail(), invitation.getEventTitle());
+
+        invitationRepository.delete(invitation);
+
+        log.info("Invitation supprimée avec succès");
+    }
+}

@@ -1,18 +1,31 @@
 @use 'sass:color';
 
-// Variables
+// Variables du template Next Admin
 $primary-color: #2196f3;
 $secondary-color: #1565c0;
 $success-color: #4caf50;
 $danger-color: #f44336;
 $warning-color: #ff9800;
-$text-primary: #2c3e50;
-$text-secondary: #607d8b;
-$background-light: #f5f6fa;
-$background-dark: #1a2035;
+$info-color: #00bcd4;
+$light-color: #f8f9fa;
+$dark-color: #343a40;
+
+// Variables de layout
+$header-height: 70px;
 $sidebar-width: 260px;
 $sidebar-collapsed-width: 70px;
 $transition-speed: 0.3s;
+
+// Couleurs du thème
+$theme-background: #f4f7fa;
+$theme-font-color: #2c3e50;
+$theme-heading-color: #2c3e50;
+$theme-font-family: 'Roboto', sans-serif;
+$theme-font-size: 14px;
+
+// Header colors
+$header-light-background: #fff;
+$header-light-text-color: #2c3e50;
 
 // Mixins
 @mixin flex-center {
@@ -29,17 +42,42 @@ $transition-speed: 0.3s;
   }
 }
 
-// Main Layout
+// Reset et styles de base
+* {
+  &:focus {
+    outline: none;
+  }
+}
+
+body {
+  font-family: $theme-font-family;
+  font-size: $theme-font-size;
+  color: $theme-font-color;
+  font-weight: 400;
+  background: $theme-background;
+  position: relative;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: $theme-heading-color;
+  font-weight: 500;
+}
+
+// Layout principal
 .admin-dashboard {
   display: flex;
   min-height: 100vh;
-  background: $background-light;
+  background: $theme-background;
+  font-family: $theme-font-family;
 }
 
-// Sidebar Styles
+// Sidebar avec style du template
 .sidebar {
   width: $sidebar-width;
-  background: $background-dark;
+  background: linear-gradient(135deg, rgba(102,126,234,0.85) 0%, rgba(118,75,162,0.85) 100%);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border-right: 1.5px solid rgba(255,255,255,0.18);
   color: white;
   transition: width $transition-speed ease;
   position: fixed;
@@ -48,37 +86,67 @@ $transition-speed: 0.3s;
 
   &.collapsed {
     width: $sidebar-collapsed-width;
+    
     .menu-item span {
-      display: none;
+      opacity: 0;
+      transform: translateX(-20px);
     }
+    
     .logo-container h3 {
-      display: none;
+      opacity: 0;
+      transform: translateX(-20px);
     }
   }
 
   .sidebar-header {
     padding: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
 
     .logo-container {
       @include flex-center;
       gap: 15px;
+      transition: all $transition-speed ease;
 
       i {
-        font-size: 24px;
-        color: $primary-color;
+        font-size: 28px;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 10px;
+        border-radius: 8px;
       }
 
       h3 {
         margin: 0;
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 600;
+        color: #fff;
+        transition: all $transition-speed ease;
+      }
+    }
+
+    .toggle-btn {
+      position: absolute;
+      top: 20px;
+      right: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all $transition-speed ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
       }
     }
   }
 
   .sidebar-menu {
     padding: 20px 0;
+    height: calc(100vh - 100px);
+    overflow-y: auto;
 
     .menu-item {
       padding: 15px 20px;
@@ -88,23 +156,45 @@ $transition-speed: 0.3s;
       cursor: pointer;
       position: relative;
       transition: all $transition-speed ease;
+      margin: 5px 15px;
+      border-radius: 8px;
 
       i {
         font-size: 18px;
         min-width: 25px;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all $transition-speed ease;
       }
 
       span {
         font-size: 15px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        transition: all $transition-speed ease;
       }
 
       &:hover {
         background: rgba(255, 255, 255, 0.1);
+        transform: translateX(5px);
+        
+        i {
+          color: #fff;
+        }
       }
 
       &.active {
-        background: $primary-color;
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         
+        i {
+          color: #fff;
+        }
+        
+        span {
+          color: #fff;
+          font-weight: 600;
+        }
+
         .menu-indicator {
           position: absolute;
           right: 0;
@@ -112,52 +202,63 @@ $transition-speed: 0.3s;
           transform: translateY(-50%);
           width: 4px;
           height: 20px;
-          background: white;
+          background: #fff;
           border-radius: 2px;
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
       }
 
       &.logout {
         margin-top: auto;
-        color: $danger-color;
+        color: #ff6b6b;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+        
+        &:hover {
+          background: rgba(255, 107, 107, 0.1);
+          border-color: rgba(255, 107, 107, 0.5);
+        }
       }
     }
   }
 }
 
-// Main Content
+// Main Content avec style du template
 .main-content {
   flex: 1;
   margin-left: $sidebar-width;
   padding: 30px;
   transition: margin $transition-speed ease;
+  background: $theme-background;
 
   &.expanded {
     margin-left: $sidebar-collapsed-width;
   }
 }
 
-// Header Styles
+// Header avec style du template
 .content-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
   background: white;
-  padding: 20px;
-  border-radius: 10px;
+  padding: 25px;
+  border-radius: 12px;
   @include card-shadow;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 
   .header-left {
     h2 {
       margin: 0;
-      color: $text-primary;
-      font-size: 24px;
+      color: $theme-heading-color;
+      font-size: 28px;
+      font-weight: 600;
     }
 
     .subtitle {
-      color: $text-secondary;
-      margin: 5px 0 0;
+      color: #607d8b;
+      margin: 8px 0 0;
+      font-size: 16px;
     }
   }
 
@@ -170,285 +271,297 @@ $transition-speed: 0.3s;
       position: relative;
       
       input {
-        padding: 10px 15px 10px 40px;
+        padding: 12px 15px 12px 45px;
         border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        width: 300px;
+        border-radius: 25px;
+        width: 320px;
         font-size: 14px;
         transition: all $transition-speed ease;
+        background: #f8f9fa;
 
         &:focus {
           border-color: $primary-color;
-          box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+          box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
           outline: none;
+          background: white;
         }
       }
 
       i {
         position: absolute;
-        left: 15px;
+        left: 18px;
         top: 50%;
         transform: translateY(-50%);
-        color: $text-secondary;
+        color: #607d8b;
+        font-size: 16px;
       }
     }
 
     button {
-      padding: 10px 20px;
+      padding: 12px 20px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 10px;
       font-weight: 500;
       transition: all $transition-speed ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
 
       &.refresh-btn {
-        background: $background-light;
-        color: $text-secondary;
-
+        background: $light-color;
+        color: #607d8b;
+        
         &:hover {
-          background: color.adjust($background-light, $lightness: -5%);
+          background: darken($light-color, 5%);
         }
       }
 
       &.add-btn {
         background: $primary-color;
         color: white;
-
+        
         &:hover {
-          background: $secondary-color;
+          background: darken($primary-color, 10%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba($primary-color, 0.3);
         }
       }
     }
   }
 }
 
-// Stats Cards
+// Stats Cards avec style du template
 .stats-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
   margin-bottom: 30px;
 
   .stat-card {
     background: white;
-    border-radius: 10px;
-    padding: 20px;
+    padding: 25px;
+    border-radius: 12px;
+    @include card-shadow;
+    border: 1px solid rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
     gap: 20px;
-    @include card-shadow;
+    transition: all $transition-speed ease;
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
 
     .stat-icon {
-      @include flex-center;
       width: 60px;
       height: 60px;
       border-radius: 12px;
+      @include flex-center;
       font-size: 24px;
+      color: white;
 
-      &.total { background: rgba($primary-color, 0.1); color: $primary-color; }
-      &.active { background: rgba($success-color, 0.1); color: $success-color; }
-      &.inactive { background: rgba($danger-color, 0.1); color: $danger-color; }
+      &.total {
+        background: linear-gradient(135deg, $primary-color, darken($primary-color, 15%));
+      }
+
+      &.active {
+        background: linear-gradient(135deg, $success-color, darken($success-color, 15%));
+      }
+
+      &.inactive {
+        background: linear-gradient(135deg, $warning-color, darken($warning-color, 15%));
+      }
     }
 
     .stat-info {
+      flex: 1;
+
       h3 {
         margin: 0;
-        font-size: 28px;
-        color: $text-primary;
+        font-size: 32px;
+        font-weight: 700;
+        color: $theme-heading-color;
       }
 
       p {
         margin: 5px 0;
-        color: $text-secondary;
+        color: #607d8b;
+        font-size: 16px;
       }
 
       .trend {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 500;
-
-        &.up { color: $success-color; }
-        &.down { color: $danger-color; }
+        
+        &.up {
+          color: $success-color;
+        }
+        
+        &.down {
+          color: $danger-color;
+        }
       }
     }
   }
 }
 
-// Table Styles
+// Table Container avec style du template
 .table-container {
   background: white;
-  border-radius: 10px;
-  padding: 20px;
+  border-radius: 12px;
   @include card-shadow;
-  overflow-x: auto;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 
   table {
     width: 100%;
     border-collapse: collapse;
 
-    th, td {
-      padding: 15px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-
-    th {
-      color: $text-secondary;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 0.5px;
-    }
-
-    td {
-      color: $text-primary;
-      font-size: 14px;
-
-      .status {
-        padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 12px;
-        font-weight: 500;
-
-        &.active {
-          background: rgba($success-color, 0.1);
-          color: $success-color;
-        }
-
-        &.inactive {
-          background: rgba($danger-color, 0.1);
-          color: $danger-color;
-        }
+    thead {
+      background: #f8f9fa;
+      
+      th {
+        padding: 18px 20px;
+        text-align: left;
+        font-weight: 600;
+        color: $theme-heading-color;
+        border-bottom: 2px solid #e9ecef;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
     }
 
-    .actions {
-      display: flex;
-      gap: 10px;
-
-      .action-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 5px;
+    tbody {
+      tr {
         transition: all $transition-speed ease;
-
-        i {
-          font-size: 16px;
-        }
+        border-bottom: 1px solid #f1f3f4;
 
         &:hover {
-          background: $background-light;
+          background: #f8f9fa;
         }
 
-        &.edit i { color: $warning-color; }
-        &.delete i { color: $danger-color; }
+        td {
+          padding: 18px 20px;
+          color: $theme-font-color;
+          font-size: 14px;
+          vertical-align: middle;
+
+          .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+
+            &.active {
+              background: rgba($success-color, 0.1);
+              color: $success-color;
+            }
+
+            &.inactive {
+              background: rgba($danger-color, 0.1);
+              color: $danger-color;
+            }
+          }
+
+          .actions {
+            display: flex;
+            gap: 8px;
+
+            .action-btn {
+              padding: 8px;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              transition: all $transition-speed ease;
+              font-size: 14px;
+
+              &:hover {
+                transform: scale(1.1);
+              }
+
+              &.edit {
+                background: rgba($primary-color, 0.1);
+                color: $primary-color;
+
+                &:hover {
+                  background: $primary-color;
+                  color: white;
+                }
+              }
+
+              &.delete {
+                background: rgba($danger-color, 0.1);
+                color: $danger-color;
+
+                &:hover {
+                  background: $danger-color;
+                  color: white;
+                }
+              }
+            }
+          }
+        }
       }
-    }
-  }
-}
-
-// Form Styles
-.event-form {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 30px;
-  @include card-shadow;
-
-  h3 {
-    margin: 0 0 20px;
-    color: $text-primary;
-  }
-
-  .form-group {
-    margin-bottom: 15px;
-
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: all $transition-speed ease;
-
-      &:focus {
-        border-color: $primary-color;
-        box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
-        outline: none;
-      }
-    }
-
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-  }
-
-  .create-btn {
-    background: $primary-color;
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all $transition-speed ease;
-
-    &:hover {
-      background: $secondary-color;
     }
   }
 }
 
 // Responsive Design
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .sidebar {
-    width: $sidebar-collapsed-width;
+    transform: translateX(-100%);
     
-    .menu-item span,
-    .logo-container h3 {
-      display: none;
+    &.collapsed {
+      transform: translateX(0);
     }
   }
 
   .main-content {
-    margin-left: $sidebar-collapsed-width;
+    margin-left: 0;
+    
+    &.expanded {
+      margin-left: 0;
+    }
   }
 
   .content-header {
     flex-direction: column;
     gap: 20px;
+    align-items: stretch;
 
     .header-actions {
-      width: 100%;
+      flex-wrap: wrap;
       
-      .search-box {
-        flex: 1;
-        
-        input {
-          width: 100%;
-        }
+      .search-box input {
+        width: 100%;
       }
     }
   }
-}
 
-@media (max-width: 768px) {
   .stats-container {
     grid-template-columns: 1fr;
   }
+}
 
-  .table-container {
-    overflow-x: auto;
-    
-    table {
-      min-width: 800px;
-    }
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-dashboard {
+  animation: fadeIn 0.5s ease-out;
 }
 
 .confirm-button {
@@ -489,5 +602,89 @@ $transition-speed: 0.3s;
 
   &:hover {
     color: #c82333;
+  }
+}
+
+// Effet glow sur le bouton déconnexion
+.menu-item.logout {
+  box-shadow: 0 0 12px 2px #ff6b6b44, 0 2px 8px 0 rgba(0,0,0,0.08);
+  transition: box-shadow 0.3s, background 0.3s;
+  background: rgba(255,107,107,0.08);
+  color: #ff6b6b;
+  font-weight: 600;
+  border: 1.5px solid #ff6b6b33;
+  &:hover {
+    background: #ff6b6b;
+    color: #fff;
+    box-shadow: 0 0 24px 4px #ff6b6b99;
+  }
+}
+
+// Animation d'apparition sur les lignes du tableau
+.table-container tbody tr {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInRow 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+.table-container tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.table-container tbody tr:nth-child(2) { animation-delay: 0.10s; }
+.table-container tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.table-container tbody tr:nth-child(4) { animation-delay: 0.20s; }
+.table-container tbody tr:nth-child(5) { animation-delay: 0.25s; }
+@keyframes fadeInRow {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Avatar utilisateur dans le tableau
+.table-container td.avatar-cell {
+  padding-right: 0;
+}
+.table-container .user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.15);
+  border: 2px solid #fff;
+  margin-right: 8px;
+}
+
+// Icônes colorées dans les stats
+.stats-container .stat-icon {
+  box-shadow: 0 2px 12px 0 rgba(33,150,243,0.12);
+  border: 2.5px solid #fff;
+  background: linear-gradient(135deg, #2196f3 60%, #21cbf3 100%);
+}
+.stats-container .stat-card:nth-child(2) .stat-icon {
+  background: linear-gradient(135deg, #4caf50 60%, #43e97b 100%);
+}
+.stats-container .stat-card:nth-child(3) .stat-icon {
+  background: linear-gradient(135deg, #ff9800 60%, #ff6a00 100%);
+}
+
+// Ombres plus profondes sur hover
+.card:hover, .stats-container .stat-card:hover, .table-container:hover {
+  box-shadow: 0 12px 32px 0 rgba(33,150,243,0.18), 0 2px 12px 0 rgba(0,0,0,0.10);
+  transform: translateY(-4px) scale(1.02);
+}
+
+// Animation sur le menu sidebar
+.sidebar .menu-item {
+  transition: background 0.3s, color 0.3s, transform 0.2s;
+  &:hover {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    transform: scale(1.06);
+  }
+}
+
+// Responsive : sidebar glassmorphism sur mobile
+@media (max-width: 768px) {
+  .sidebar {
+    background: linear-gradient(135deg, rgba(102,126,234,0.95) 0%, rgba(118,75,162,0.95) 100%);
+    backdrop-filter: blur(12px);
   }
 } 

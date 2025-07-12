@@ -198,23 +198,22 @@ import { NotificationComponent } from '../../notification/components/notificatio
                   <td>{{ invitation.eventTitle }}</td>
                   <td>{{ invitation.userEmail }}</td>
                   <td>
-                    <button 
-                      [class.confirmed-button]="invitation.status === 'CONFIRMED'"
-                      [class.confirm-button]="invitation.status !== 'CONFIRMED'"
-                      (click)="confirmInvitation(invitation.id)"
-                      [disabled]="invitation.status === 'CONFIRMED'">
-                      {{ invitation.status === 'CONFIRMED' ? 'Confirmé' : 'Confirmer' }}
-                    </button>
-                  </td>
-                  <td>
-                    <span *ngIf="invitation.seatInfo">
-                      Rangée {{ invitation.seatInfo.row }}, Place {{ invitation.seatInfo.number }}
+                    <span class="status" [class.pending]="invitation.status === 'PENDING'" [class.confirmed]="invitation.status === 'CONFIRMED'" [class.cancelled]="invitation.status === 'CANCELLED'">
+                      {{ invitation.status }}
                     </span>
-                    <span *ngIf="!invitation.seatInfo">-</span>
                   </td>
-                  <td>{{ formatDate(invitation.createdAt) }}</td>
-                  <td>
-                    <button class="delete-btn" (click)="deleteInvitation(invitation.id)">
+                  <td>{{ invitation.seatInfo ? 'Rangée ' + invitation.seatInfo.row + ', Place ' + invitation.seatInfo.number : 'N/A' }}</td>
+                  <td>{{ invitation.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="actions">
+                    <button class="action-btn confirm" 
+                            *ngIf="invitation.status === 'PENDING'"
+                            (click)="confirmInvitation(invitation.id)" 
+                            title="Confirmer">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    <button class="action-btn delete" 
+                            (click)="deleteInvitation(invitation.id)" 
+                            title="Supprimer">
                       <i class="fas fa-trash"></i>
                     </button>
                   </td>
@@ -427,7 +426,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       case 'events':
         return this.events.filter(event => this.isUpcoming(event.eventDate)).length;
       case 'invitations':
-        return this.invitations.filter(inv => inv.status === 'ACCEPTED').length;
+        return this.invitations.filter(inv => inv.status === 'CONFIRMED').length;
       default:
         return 0;
     }
@@ -560,23 +559,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   confirmInvitation(invitationId: number) {
     this.adminInvitationService.confirmInvitation(invitationId).subscribe({
       next: (updatedInvitation) => {
-        const index = this.invitations.findIndex(i => i.id === invitationId);
+        const index = this.invitations.findIndex(inv => inv.id === invitationId);
         if (index !== -1) {
           this.invitations[index] = updatedInvitation;
         }
-        this.notificationService.show({
-          message: 'Invitation confirmée avec succès',
-          type: 'success',
-          duration: 5000
-        });
+        this.notificationService.showSuccess('Invitation confirmée avec succès');
       },
       error: (error) => {
-        console.error('Error confirming invitation:', error);
-        this.notificationService.show({
-          message: 'Erreur lors de la confirmation de l\'invitation',
-          type: 'error',
-          duration: 5000
-        });
+        console.error('Erreur lors de la confirmation de l\'invitation:', error);
+        this.notificationService.showError('Erreur lors de la confirmation de l\'invitation');
       }
     });
   }

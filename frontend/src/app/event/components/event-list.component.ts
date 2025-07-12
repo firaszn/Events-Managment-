@@ -15,12 +15,20 @@ import { Router } from '@angular/router';
   template: `
     <div class="events-page">
       <app-notification></app-notification>
-      
-      <!-- Header Section -->
-      <div class="events-header">
-        <h1>Découvrez nos événements</h1>
-        <p class="subtitle">Rejoignez-nous pour des moments inoubliables</p>
+
+      <!-- Loading Spinner -->
+      <div class="spinner-container" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Chargement des événements...</p>
       </div>
+
+      <!-- Content (hidden while loading) -->
+      <div *ngIf="!isLoading">
+        <!-- Header Section -->
+        <div class="events-header">
+          <h1>Découvrez nos événements</h1>
+          <p class="subtitle">Rejoignez-nous pour des moments inoubliables</p>
+        </div>
 
       <!-- Search and Filter Section -->
       <div class="search-section">
@@ -98,6 +106,7 @@ import { Router } from '@angular/router';
         <h3>Aucun événement trouvé</h3>
         <p>Essayez de modifier vos critères de recherche</p>
       </div>
+      </div>
 
       <div *ngIf="error" class="error-message">
         <i class="fas fa-exclamation-circle"></i>
@@ -112,6 +121,38 @@ import { Router } from '@angular/router';
       margin: 0 auto;
       min-height: 100vh;
       background-color: #f8f9fa;
+    }
+
+    /* Spinner Styles */
+    .spinner-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      color: #667eea;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(102, 126, 234, 0.3);
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner-container p {
+      font-size: 1.2rem;
+      margin: 0;
+      opacity: 0.8;
+      font-weight: 500;
     }
 
     .events-header {
@@ -165,6 +206,28 @@ import { Router } from '@angular/router';
       margin-bottom: 20px;
     }
 
+    .custom-chip {
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: white;
+      color: #666;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      user-select: none;
+    }
+
+    .custom-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .custom-chip.selected {
+      background: #2196F3;
+      color: white;
+    }
+
     .events-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -177,6 +240,12 @@ import { Router } from '@angular/router';
       border-radius: 15px;
       overflow: hidden;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .event-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
 
     .event-card-header {
@@ -189,10 +258,12 @@ import { Router } from '@angular/router';
     }
 
     .event-status {
-      padding: 5px 12px;
+      padding: 6px 12px;
       border-radius: 20px;
       font-size: 0.9em;
       font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .status-upcoming {
@@ -210,8 +281,9 @@ import { Router } from '@angular/router';
     .event-date {
       text-align: center;
       background: rgba(255,255,255,0.2);
-      padding: 10px;
+      padding: 10px 15px;
       border-radius: 10px;
+      backdrop-filter: blur(5px);
     }
 
     .date-day {
@@ -223,6 +295,7 @@ import { Router } from '@angular/router';
     .date-month {
       font-size: 1em;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .event-content {
@@ -272,18 +345,60 @@ import { Router } from '@angular/router';
       border-top: 1px solid #eee;
     }
 
-    .event-footer button {
+    .custom-button {
       width: 100%;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #2196F3, #1976D2);
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
     }
 
-    .event-footer i {
-      margin-right: 8px;
+    .custom-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+      background: linear-gradient(135deg, #1E88E5, #1565C0);
+    }
+
+    .custom-button:disabled {
+      background: #E0E0E0;
+      cursor: not-allowed;
+      box-shadow: none;
+      color: #9E9E9E;
+    }
+
+    .custom-button.registered {
+      background: linear-gradient(135deg, #4CAF50, #43A047);
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      cursor: default;
+    }
+
+    .custom-button.registered:hover {
+      transform: none;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .custom-button i {
+      font-size: 1.2em;
     }
 
     .empty-state {
       text-align: center;
-      padding: 40px;
-      color: #666;
+      padding: 60px 20px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
     .empty-state i {
@@ -292,18 +407,31 @@ import { Router } from '@angular/router';
       margin-bottom: 20px;
     }
 
+    .empty-state h3 {
+      color: #2c3e50;
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+
+    .empty-state p {
+      color: #666;
+      font-size: 1.1em;
+    }
+
     .error-message {
       display: flex;
       align-items: center;
       color: #e74c3c;
-      padding: 15px;
+      padding: 15px 20px;
       margin-top: 20px;
       background: #fde2e2;
-      border-radius: 8px;
+      border-radius: 10px;
+      font-weight: 500;
     }
 
     .error-message i {
       margin-right: 10px;
+      font-size: 1.2em;
     }
 
     @media (max-width: 768px) {
@@ -317,41 +445,36 @@ import { Router } from '@angular/router';
 
       .events-header h1 {
         font-size: 2em;
-      }
     }
 
     .custom-button {
       padding: 10px 20px;
-      border-radius: 25px;
-      border: none;
-      background-color: #2196F3;
-      color: white;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+        font-size: 0.9rem;
+      }
     }
 
-    .custom-button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-      opacity: 0.7;
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
-    .custom-button.registered {
-      background-color: #4CAF50;
-      cursor: default;
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
     }
 
-    .custom-button.registered:disabled {
-      background-color: #4CAF50;
-      opacity: 0.8;
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .custom-button i {
-      font-size: 1.1em;
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
   `]
 })
@@ -363,6 +486,7 @@ export class EventListComponent implements OnInit {
   isAdmin = false;
   userEmail: string = '';
   searchTerm: string = '';
+  isLoading = true;
   
   filters = [
     { label: 'Tous', active: true, type: 'all' },
@@ -380,7 +504,11 @@ export class EventListComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    this.loadEvents();
+    // Afficher le spinner pendant 2 secondes minimum
+    setTimeout(() => {
+      this.loadEvents();
+    }, 2000);
+
     this.isLoggedIn = await this.authService.isLoggedIn();
     if (this.isLoggedIn) {
       const profile = await this.authService.loadUserProfile();
@@ -394,9 +522,11 @@ export class EventListComponent implements OnInit {
       next: (events) => {
         this.events = events;
         this.filterEvents();
+        this.isLoading = false; // Cacher le spinner après le chargement
       },
       error: (error) => {
         console.error('Error loading events:', error);
+        this.isLoading = false; // Cacher le spinner même en cas d'erreur
         this.notificationService.show({
           message: 'Une erreur est survenue lors du chargement des événements.',
           type: 'error',

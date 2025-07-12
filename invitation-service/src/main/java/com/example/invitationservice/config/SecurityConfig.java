@@ -64,9 +64,11 @@ public class SecurityConfig {
                     .requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/invitations/check/**").hasAnyRole("USER", "ADMIN")
                     .requestMatchers(HttpMethod.POST, "/invitations").hasAnyRole("USER", "ADMIN")
+                    .requestMatchers(HttpMethod.PATCH, "/invitations/*/confirm").hasRole("ADMIN")
                     .anyRequest().authenticated();
                 logger.debug("Security configuration: /invitations/check/** requires ROLE_USER or ROLE_ADMIN");
                 logger.debug("Security configuration: POST /invitations requires ROLE_USER or ROLE_ADMIN");
+                logger.debug("Security configuration: PATCH /invitations/*/confirm requires ROLE_ADMIN");
             })
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {
                 jwt.jwtAuthenticationConverter(jwtAuthenticationConverter());
@@ -93,9 +95,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:4200"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

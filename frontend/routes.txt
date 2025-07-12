@@ -1,0 +1,6 @@
+/
+/home
+/login
+/register
+/admin
+/profile 

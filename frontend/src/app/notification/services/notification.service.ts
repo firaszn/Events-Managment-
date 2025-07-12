@@ -27,4 +27,20 @@ export class NotificationService {
   hide() {
     this.notificationSubject.next({ message: '', type: 'info', duration: 0 });
   }
+
+  showSuccess(message: string, duration: number = 5000) {
+    this.show({
+      message,
+      type: 'success',
+      duration
+    });
+  }
+
+  showError(message: string, duration: number = 5000) {
+    this.show({
+      message,
+      type: 'error',
+      duration
+    });
+  }
 } 

@@ -1,7 +1,4 @@
-FROM openjdk:17-jdk-slim
-
-COPY target/microservices-0.0.1-SNAPSHOT.jar projetmicroservicesrepasfiras.jar
-
-EXPOSE 8084
-
-ENTRYPOINT ["java", "-jar", "projetmicroservicesrepasfiras.jar"]
+FROM eclipse-temurin:17-jdk-alpine
+VOLUME /tmp
+COPY target/*.jar app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]

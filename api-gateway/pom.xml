@@ -13,7 +13,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>api-gateway</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <name>api-gateway</name>
     <description>Api Gateway sécurisé avec Keycloak</description>
 
@@ -110,4 +110,17 @@
             </snapshots>
         </repository>
     </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>deploymentRepo</id>
+            <name>Nexus Releases</name>
+            <url>http://localhost:8082/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>deploymentRepo</id>
+            <name>Nexus Snapshots</name>
+            <url>http://localhost:8082/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

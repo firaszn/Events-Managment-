@@ -44,6 +44,8 @@
         <module>eureka-server</module>
         <module>user-service</module>
         <module>event-service</module>
+        <module>invitation-service</module>
+        <module>notification-service</module>
     </modules>
 
     <!-- Gestion des versions des dépendances -->
@@ -208,15 +210,10 @@
         </pluginManagement>
     </build>
     <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <name>Nexus Releases</name>
-            <url>http://localhost:8082/repository/maven-releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <name>Nexus Snapshots</name>
-            <url>http://localhost:8082/repository/maven-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
+    <repository>
+      <id>deploymentRepo</id>
+      <name>Nexus Repository</name>
+      <url>http://localhost:8082/repository/maven-releases/</url>
+    </repository>
+  </distributionManagement>
 </project>

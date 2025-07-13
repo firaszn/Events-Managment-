@@ -29,6 +29,7 @@ import java.util.Map;
 public class SecurityConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+    private static final String ROLE_ADMIN = "ADMIN";
 
     /**
      * Décodeur JWT de débogage qui ne valide PAS la signature.
@@ -62,9 +63,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> {
                 authorize
                     .requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/invitations/check/**").hasAnyRole("USER", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/invitations").hasAnyRole("USER", "ADMIN")
-                    .requestMatchers(HttpMethod.PATCH, "/invitations/*/confirm").hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/invitations/check/**").hasAnyRole("USER", ROLE_ADMIN)
+                    .requestMatchers(HttpMethod.POST, "/invitations").hasAnyRole("USER", ROLE_ADMIN)
+                    .requestMatchers(HttpMethod.PATCH, "/invitations/*/confirm").hasRole(ROLE_ADMIN)
                     .anyRequest().authenticated();
                 logger.debug("Security configuration: /invitations/check/** requires ROLE_USER or ROLE_ADMIN");
                 logger.debug("Security configuration: POST /invitations requires ROLE_USER or ROLE_ADMIN");

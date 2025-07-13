@@ -70,7 +70,6 @@ InvitationController {
         
         // Ajouter les places temporairement verrouillées
         List<TemporarySeatLock> lockedSeats = seatLockService.getLockedSeats(eventIdLong);
-        LocalDateTime now = LocalDateTime.now();
         
         for (TemporarySeatLock lock : lockedSeats) {
             if (!lock.isExpired()) {

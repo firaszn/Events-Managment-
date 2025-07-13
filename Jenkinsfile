@@ -4,13 +4,16 @@ pipeline {
     environment {
         MAVEN_HOME = tool 'Maven'
         REGISTRY = "docker.io/firaszn"
+        IMAGE_NAME = "events-management:${env.BUILD_NUMBER}"
         GITHUB_REPO = "https://github.com/firaszn/Events-Managment-.git"
         SERVICES = "api-gateway config-server eureka-server user-service event-service frontend invitation-service notification-service"
+
     }
 
     stages {
         stage('GIT Checkout') {
             steps {
+                // Checkout du repo GitHub
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
@@ -19,7 +22,7 @@ pipeline {
                     submoduleCfg: [],
                     userRemoteConfigs: [[
                         url: "${GITHUB_REPO}",
-                        credentialsId: 'github-credentials'
+                        credentialsId: 'github-credentials' // À configurer dans Jenkins
                     ]]
                 ])
             }
@@ -36,29 +39,37 @@ pipeline {
                 sh "${MAVEN_HOME}/bin/mvn compile"
             }
         }
-
-        stage('SonarQube Analysis') {
+          stage('Maven Test') {
             steps {
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    sh """
-                        ${MAVEN_HOME}/bin/mvn sonar:sonar \
-                            -Dsonar.projectKey=events-management \
-                            -Dsonar.host.url=http://localhost:9000 \
-                            -Dsonar.login=$SONAR_TOKEN
-                    """
-                }
+                sh "${MAVEN_HOME}/bin/mvn test"
             }
         }
+        stage('Maven Package') {
+         steps {
+  sh "${MAVEN_HOME}/bin/mvn clean package -DskipTests"    }
+}
 
-        stage('Nexus Deploy') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-                    sh "${MAVEN_HOME}/bin/mvn deploy -Dmaven.repo.local=${WORKSPACE}/.m2/repository"
-                }
-            }
+      stage('SonarQube Analysis') {
+    steps {
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            sh """
+                ${MAVEN_HOME}/bin/mvn sonar:sonar \
+                    -Dsonar.projectKey=events-management \
+                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.login=$SONAR_TOKEN
+            """
         }
+    }
+}
 
-        stage('Docker Build') {
+      stage('Nexus Deploy') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+    sh "${MAVEN_HOME}/bin/mvn deploy -Dmaven.repo.local=${WORKSPACE}/.m2/repository -DskipTests"        }
+    }
+}
+
+      stage('Docker Build') {
             steps {
                 script {
                     def services = env.SERVICES.split()

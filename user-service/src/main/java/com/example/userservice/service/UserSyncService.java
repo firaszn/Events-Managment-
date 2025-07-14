@@ -67,8 +67,7 @@ public class UserSyncService {
             try {
                 if (attempt > 1) {
                     // Délai exponentiel : 2s, 4s, 8s, 16s, 32s
-                    long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2.0, (double) (attempt - 2)));
-                    log.info("Attente de {} secondes avant la tentative {} de récupération de l'utilisateur Keycloak", delay/1000, attempt);
+                    long delay = (long) (INITIAL_RETRY_DELAY_MS * Math.pow(2.0, (attempt - 2)));                    log.info("Attente de {} secondes avant la tentative {} de récupération de l'utilisateur Keycloak", delay/1000, attempt);
                     Thread.sleep(delay);
                 }
                 log.info("Tentative {} de récupération de l'utilisateur Keycloak: {}", attempt, email);
@@ -196,7 +195,6 @@ public class UserSyncService {
                 UserRepresentation keycloakUser = keycloakService.getUserByEmail(email);
                 if (keycloakUser != null) {
                     log.warn("Nettoyage nécessaire dans Keycloak pour l'utilisateur: {}", email);
-                    // TODO: Implémenter la suppression dans Keycloak si nécessaire
                 }
             } catch (Exception cleanupException) {
                 log.error("Erreur lors du nettoyage: {}", cleanupException.getMessage());

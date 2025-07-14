@@ -55,7 +55,7 @@ pipeline {
             sh """
                 ${MAVEN_HOME}/bin/mvn sonar:sonar \
                     -Dsonar.projectKey=events-management \
-                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.host.url=http://192.168.50.4:9000 \
                     -Dsonar.login=$SONAR_TOKEN
             """
         }

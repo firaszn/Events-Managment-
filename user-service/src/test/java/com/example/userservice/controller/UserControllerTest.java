@@ -1,6 +1,5 @@
 package com.example.userservice.controller;
 
-import com.example.userservice.entity.UserEntity;
 import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.model.UserResponse;
 import com.example.userservice.service.KeycloakUserService;
@@ -13,7 +12,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,6 +38,7 @@ class UserControllerTest {
     void testGetAllUsers_forbidden() {
         when(keycloakUserService.isCurrentUserAdmin(authentication)).thenReturn(false);
         ResponseEntity<List<UserResponse>> response = userController.getAllUsers(authentication);
-        assertEquals(403, response.getStatusCodeValue());
+        int status = response.getStatusCode().value();
+        assertEquals(403, status);
     }
 } 

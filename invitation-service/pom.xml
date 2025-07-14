@@ -13,7 +13,7 @@
     
     <groupId>com.example</groupId>
     <artifactId>invitation-service</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>invitation-service</name>
     <description>Service de gestion des invitations aux événements</description>
     

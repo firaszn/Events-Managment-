@@ -1,3 +1,4 @@
+// Ceci est un commentaire ajouté pour test ou documentation
 pipeline {
     agent any
 

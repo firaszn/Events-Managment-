@@ -14,6 +14,11 @@ import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 
+class KeycloakServiceException extends RuntimeException {
+    public KeycloakServiceException(String message) { super(message); }
+    public KeycloakServiceException(String message, Throwable cause) { super(message, cause); }
+}
+
 @Service
 @Slf4j
 public class KeycloakService {
@@ -76,11 +81,11 @@ public class KeycloakService {
                 return userId;
             } else {
                 log.error("Erreur lors de la création de l'utilisateur: {}", response.getStatus());
-                throw new RuntimeException("Erreur lors de la création de l'utilisateur dans Keycloak");
+                throw new KeycloakServiceException("Erreur lors de la création de l'utilisateur dans Keycloak");
             }
         } catch (Exception e) {
             log.error("Erreur lors de la création de l'utilisateur dans Keycloak: {}", e.getMessage());
-            throw new RuntimeException("Erreur lors de la création de l'utilisateur dans Keycloak: " + e.getMessage());
+            throw new KeycloakServiceException("Erreur lors de la création de l'utilisateur dans Keycloak: " + e.getMessage(), e);
         }
     }
 
@@ -108,7 +113,7 @@ public class KeycloakService {
             log.info("Mot de passe mis à jour pour l'utilisateur: {}", userId);
         } catch (Exception e) {
             log.error("Erreur lors de la mise à jour du mot de passe pour l'utilisateur {}: {}", userId, e.getMessage());
-            throw new RuntimeException("Erreur lors de la mise à jour du mot de passe: " + e.getMessage());
+            throw new KeycloakServiceException("Erreur lors de la mise à jour du mot de passe: " + e.getMessage(), e);
         }
     }
 
@@ -247,7 +252,7 @@ public class KeycloakService {
         } catch (Exception e) {
             log.error("Erreur lors de la mise à jour de l'utilisateur {} dans Keycloak: {}",
                     userRepresentation.getEmail(), e.getMessage());
-            throw new RuntimeException("Erreur lors de la mise à jour dans Keycloak: " + e.getMessage());
+            throw new KeycloakServiceException("Erreur lors de la mise à jour dans Keycloak: " + e.getMessage(), e);
         }
     }
 
@@ -260,7 +265,7 @@ public class KeycloakService {
             log.info("Utilisateur {} supprimé de Keycloak", userId);
         } catch (Exception e) {
             log.error("Erreur lors de la suppression de l'utilisateur {} de Keycloak: {}", userId, e.getMessage());
-            throw new RuntimeException("Erreur lors de la suppression de Keycloak: " + e.getMessage());
+            throw new KeycloakServiceException("Erreur lors de la suppression de Keycloak: " + e.getMessage(), e);
         }
     }
 }

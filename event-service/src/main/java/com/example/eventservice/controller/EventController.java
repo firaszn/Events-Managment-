@@ -73,7 +73,7 @@ public class EventController {
                 }
                 return response;
             })
-            .collect(Collectors.toList());
+            .toList();
         
         logger.info("Returning {} events", responses.size());
         return ResponseEntity.ok(responses);

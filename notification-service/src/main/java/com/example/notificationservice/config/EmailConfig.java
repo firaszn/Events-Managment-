@@ -10,6 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Properties;
 
+class EmailConfigException extends RuntimeException {
+    public EmailConfigException(String message, Throwable cause) { super(message, cause); }
+}
+
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
@@ -39,7 +43,7 @@ public class EmailConfig {
             return mailSender;
         } catch (Exception e) {
             log.error("❌ Failed to configure email sender: {}", e.getMessage());
-            throw new RuntimeException("Failed to configure email sender", e);
+            throw new EmailConfigException("Failed to configure email sender", e);
         }
     }
 } 

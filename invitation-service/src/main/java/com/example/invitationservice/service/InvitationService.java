@@ -17,6 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+class InvitationException extends RuntimeException {
+    public InvitationException(String message) { super(message); }
+    public InvitationException(String message, Throwable cause) { super(message, cause); }
+}
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -51,7 +56,7 @@ public class InvitationService {
         
         // Vérifier si l'utilisateur est déjà inscrit
         if (invitationRepository.existsByEventIdAndUserEmail(eventId, request.getUserEmail())) {
-            throw new RuntimeException("Vous êtes déjà inscrit à cet événement");
+            throw new InvitationException("Vous êtes déjà inscrit à cet événement");
         }
 
         // Convertir les informations de siège
@@ -64,7 +69,7 @@ public class InvitationService {
 
             // Vérifier si le siège est déjà occupé
             if (isSeatOccupied(eventId, seatInfo)) {
-                throw new RuntimeException("Cette place est déjà occupée");
+                throw new InvitationException("Cette place est déjà occupée");
             }
         }
 
@@ -84,7 +89,7 @@ public class InvitationService {
     @Transactional
     public InvitationEntity confirmInvitation(Long invitationId) {
         InvitationEntity invitation = invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new RuntimeException("Invitation non trouvée"));
+                .orElseThrow(() -> new InvitationException("Invitation non trouvée"));
 
         invitation.setStatus(InvitationStatus.CONFIRMED);
         invitation = invitationRepository.save(invitation);
@@ -116,7 +121,7 @@ public class InvitationService {
             return invitation;
         } catch (Exception e) {
             log.error("Erreur lors de l'envoi du message Kafka", e);
-            throw new RuntimeException("Erreur lors de l'envoi de la notification");
+            throw new InvitationException("Erreur lors de l'envoi de la notification", e);
         }
     }
 
@@ -134,7 +139,7 @@ public class InvitationService {
         log.info("Suppression de l'invitation avec l'ID: {}", invitationId);
 
         InvitationEntity invitation = invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new RuntimeException("Invitation non trouvée avec l'ID: " + invitationId));
+                .orElseThrow(() -> new InvitationException("Invitation non trouvée avec l'ID: " + invitationId));
 
         log.info("Suppression de l'invitation pour l'utilisateur {} et l'événement {}",
                 invitation.getUserEmail(), invitation.getEventTitle());

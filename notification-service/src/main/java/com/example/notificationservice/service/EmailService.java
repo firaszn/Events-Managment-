@@ -6,6 +6,10 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+class EmailSendException extends RuntimeException {
+    public EmailSendException(String message, Throwable cause) { super(message, cause); }
+}
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -25,7 +29,7 @@ public class EmailService {
             log.info("Email envoyé avec succès à : {}", to);
         } catch (Exception e) {
             log.error("Erreur lors de l'envoi de l'email à : {}", to, e);
-            throw new RuntimeException("Erreur lors de l'envoi de l'email", e);
+            throw new EmailSendException("Erreur lors de l'envoi de l'email", e);
         }
     }
 } 

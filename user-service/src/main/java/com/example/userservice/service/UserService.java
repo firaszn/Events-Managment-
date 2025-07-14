@@ -7,6 +7,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -15,6 +17,7 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -34,10 +37,10 @@ public class UserService implements UserDetailsService {
     }
 
     public UserEntity findByEmail(String email) {
-        System.out.println("Recherche de l'utilisateur avec l'email: " + email);
+        logger.info("Recherche de l'utilisateur avec l'email: {}", email);
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
-        System.out.println("Utilisateur trouvé: " + user);
+        logger.info("Utilisateur trouvé: {}", user);
         return user;
     }
 
@@ -95,13 +98,12 @@ public class UserService implements UserDetailsService {
         if (updatedUser.getLastName() != null) {
             existingUser.setLastName(updatedUser.getLastName());
         }
-        if (updatedUser.getEmail() != null) {
-            // Only check for email uniqueness if the email is actually changing
-            if (!updatedUser.getEmail().equals(existingUser.getEmail())) {
-                if (userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
-                    throw new IllegalStateException("Email already taken");
-                }
+        if (updatedUser.getEmail() != null && !updatedUser.getEmail().equals(existingUser.getEmail())) {
+            if (userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
+                throw new IllegalStateException("Email already taken");
             }
+            existingUser.setEmail(updatedUser.getEmail());
+        } else if (updatedUser.getEmail() != null) {
             existingUser.setEmail(updatedUser.getEmail());
         }
         // ✅ INTÉGRATION : Encoder le password si fourni dans UserUpdateRequest

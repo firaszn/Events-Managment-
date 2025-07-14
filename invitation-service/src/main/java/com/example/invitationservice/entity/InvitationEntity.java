@@ -36,10 +36,8 @@ public class InvitationEntity {
     private InvitationStatus status;
 
     @Embedded
-    @AttributeOverrides({
-        @AttributeOverride(name = "row", column = @Column(name = "seat_row")),
-        @AttributeOverride(name = "number", column = @Column(name = "seat_number"))
-    })
+    @AttributeOverride(name = "row", column = @Column(name = "seat_row"))
+    @AttributeOverride(name = "number", column = @Column(name = "seat_number"))
     private SeatInfo seatInfo;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -72,15 +72,15 @@ public class KeycloakAuthController {
 
     @GetMapping("/info")
     public ResponseEntity<String> getKeycloakInfo() {
-        return ResponseEntity.ok(
-            "Endpoints Keycloak disponibles:\n" +
-            "- POST /auth/keycloak/register : Créer un utilisateur dans Keycloak ET PostgreSQL\n" +
-            "- POST /auth/keycloak/login : Valider les credentials avec Keycloak (sync auto)\n" +
-            "- POST /auth/keycloak/sync-from-keycloak?email=xxx : Synchroniser un utilisateur depuis Keycloak\n" +
-            "- GET /auth/keycloak/admin-url : Obtenir l'URL d'administration Keycloak\n" +
-            "- Dashboard Keycloak : http://localhost:8080\n" +
-            "- Realm : RepasKeycloak\n" +
-            "- Base PostgreSQL : Synchronisation automatique"
-        );
+        return ResponseEntity.ok("""
+            Endpoints Keycloak disponibles:
+            - POST /auth/keycloak/register : Créer un utilisateur dans Keycloak ET PostgreSQL
+            - POST /auth/keycloak/login : Valider les credentials avec Keycloak (sync auto)
+            - POST /auth/keycloak/sync-from-keycloak?email=xxx : Synchroniser un utilisateur depuis Keycloak
+            - GET /auth/keycloak/admin-url : Obtenir l'URL d'administration Keycloak
+            - Dashboard Keycloak : http://localhost:8080
+            - Realm : RepasKeycloak
+            - Base PostgreSQL : Synchronisation automatique
+            """);
     }
 }

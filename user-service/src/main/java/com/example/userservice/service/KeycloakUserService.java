@@ -39,11 +39,11 @@ public class KeycloakUserService {
             // Assurer la synchronisation
             UserEntity user = userSyncService.ensureUserSyncOnLogin(email);
             if (user == null) {
-                throw new RuntimeException("Utilisateur non trouvé: " + email);
+                throw new KeycloakUserServiceException("Utilisateur non trouvé: " + email);
             }
             return user;
         }
-        throw new RuntimeException("Token JWT invalide");
+        throw new KeycloakUserServiceException("Token JWT invalide");
     }
 
     /**
@@ -83,7 +83,7 @@ public class KeycloakUserService {
 
         } catch (Exception e) {
             log.error("Erreur lors de la mise à jour du profil utilisateur: {}", e.getMessage());
-            throw new RuntimeException("Erreur lors de la mise à jour: " + e.getMessage());
+            throw new KeycloakUserServiceException("Erreur lors de la mise à jour: " + e.getMessage(), e);
         }
     }
 
@@ -137,7 +137,7 @@ public class KeycloakUserService {
         try {
             // 1. Récupérer l'utilisateur
             UserEntity user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé: " + userId));
+                    .orElseThrow(() -> new KeycloakUserServiceException("Utilisateur non trouvé: " + userId));
             
             String email = user.getEmail();
             
@@ -150,7 +150,7 @@ public class KeycloakUserService {
             
         } catch (Exception e) {
             log.error("Erreur lors de la suppression de l'utilisateur {}: {}", userId, e.getMessage());
-            throw new RuntimeException("Erreur lors de la suppression: " + e.getMessage());
+            throw new KeycloakUserServiceException("Erreur lors de la suppression: " + e.getMessage(), e);
         }
     }
 
@@ -223,6 +223,11 @@ public class KeycloakUserService {
         if (authentication.getPrincipal() instanceof Jwt jwt) {
             return jwt.getClaimAsString("email");
         }
-        throw new RuntimeException("Token JWT invalide");
+        throw new KeycloakUserServiceException("Token JWT invalide");
     }
+}
+
+class KeycloakUserServiceException extends RuntimeException {
+    public KeycloakUserServiceException(String message) { super(message); }
+    public KeycloakUserServiceException(String message, Throwable cause) { super(message, cause); }
 }

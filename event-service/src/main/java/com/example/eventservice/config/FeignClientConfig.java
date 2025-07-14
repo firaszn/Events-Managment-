@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class FeignClientConfig {
     
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(FeignClientConfig.class);
+    private static final String AUTHORIZATION_HEADER = "Authorization";
     
     @Bean
     public RequestInterceptor requestInterceptor() {
@@ -26,11 +27,10 @@ public class FeignClientConfig {
             
             // Méthode 1: Obtenir le token à partir du SecurityContext
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication instanceof JwtAuthenticationToken) {
-                JwtAuthenticationToken jwtAuthentication = (JwtAuthenticationToken) authentication;
+            if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
                 String token = jwtAuthentication.getToken().getTokenValue();
                 log.debug("Adding token from SecurityContext for URL: {}", requestTemplate.path());
-                requestTemplate.header("Authorization", "Bearer " + token);
+                requestTemplate.header(AUTHORIZATION_HEADER, "Bearer " + token);
                 return;
             }
             
@@ -38,10 +38,10 @@ public class FeignClientConfig {
             ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (requestAttributes != null) {
                 HttpServletRequest request = requestAttributes.getRequest();
-                String authorizationHeader = request.getHeader("Authorization");
+                String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
                 if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                     log.debug("Successfully added Authorization header from current request for URL: {}", requestTemplate.path());
-                    requestTemplate.header("Authorization", authorizationHeader);
+                    requestTemplate.header(AUTHORIZATION_HEADER, authorizationHeader);
                     return;
                 }
             }

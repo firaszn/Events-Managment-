@@ -41,7 +41,7 @@ InvitationController {
         List<InvitationEntity> invitations = invitationService.getAllInvitations();
         List<InvitationResponse> responses = invitations.stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(responses);
     }
 

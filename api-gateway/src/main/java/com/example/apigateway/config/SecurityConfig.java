@@ -73,19 +73,20 @@ public class SecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
             .cors().and()
-            .csrf().disable()
-            .authorizeExchange()
-            .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .pathMatchers("/auth/**").permitAll()
-            .pathMatchers("/events/**").authenticated()
-            .pathMatchers("/api/invitations/**").authenticated()
-            .pathMatchers("/api/users/**").authenticated()
-            .pathMatchers("/api/password/**").authenticated()
-            .pathMatchers("/actuator/**").permitAll()
-            .anyExchange().authenticated()
-            .and()
-            .oauth2ResourceServer()
-            .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor()));
+            .csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .authorizeExchange(exchanges -> exchanges
+                .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .pathMatchers("/auth/**").permitAll()
+                .pathMatchers("/events/**").authenticated()
+                .pathMatchers("/api/invitations/**").authenticated()
+                .pathMatchers("/api/users/**").authenticated()
+                .pathMatchers("/api/password/**").authenticated()
+                .pathMatchers("/actuator/**").permitAll()
+                .anyExchange().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(grantedAuthoritiesExtractor()))
+            );
         return http.build();
     }
 

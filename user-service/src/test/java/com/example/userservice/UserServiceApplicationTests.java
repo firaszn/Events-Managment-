@@ -8,6 +8,8 @@ class UserServiceApplicationTests {
 
     @Test
     void contextLoads() {
+        // Test généré automatiquement pour vérifier le chargement du contexte Spring Boot.
+        // Aucun comportement spécifique à tester ici.
     }
 
 }

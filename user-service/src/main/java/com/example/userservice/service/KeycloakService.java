@@ -232,7 +232,7 @@ public class KeycloakService {
             List<String> roleNames = userRoles.stream()
                     .map(role -> role.getName())
                     .filter(roleName -> roleName.equals("USER") || roleName.equals("ADMIN"))
-                    .collect(java.util.stream.Collectors.toList());
+                    .toList();
 
             log.info("Rôles trouvés pour l'utilisateur {}: {}", userId, roleNames);
             return roleNames;

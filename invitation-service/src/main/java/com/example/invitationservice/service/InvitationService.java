@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 class InvitationException extends RuntimeException {
     public InvitationException(String message) { super(message); }
@@ -130,8 +130,8 @@ public class InvitationService {
         return invitationRepository.findByEventId(eventId)
                 .stream()
                 .map(InvitationEntity::getSeatInfo)
-                .filter(seatInfo -> seatInfo != null)
-                .collect(Collectors.toList());
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Transactional

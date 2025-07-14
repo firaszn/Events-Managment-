@@ -62,21 +62,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("Configuring security filter chain");
+        logger.info("Configuring security filter chain");
 
         // Utiliser le bean JwtAuthenticationConverter configuré
 
         http
             .csrf(csrf -> {
                 csrf.disable();
-                System.out.println("CSRF disabled");
+                logger.info("CSRF disabled");
             })
             .sessionManagement(session -> {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-                System.out.println("Session management configured to STATELESS");
+                logger.info("Session management configured to STATELESS");
             })
             .authorizeHttpRequests(authorize -> {
-                System.out.println("Configuring authorization rules");
+                logger.info("Configuring authorization rules");
                 authorize
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/auth/register").permitAll()
@@ -92,18 +92,18 @@ public class SecurityConfig {
                     .requestMatchers("/v2/api-docs", "/v3/api-docs", "/v3/api-docs/**", "/swagger-resources", "/swagger-resources/**", "/configuration/ui", "/configuration/security", "/swagger-ui.html", "/webjars/**").permitAll()
                     .requestMatchers("/api/users/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                     .anyRequest().authenticated();
-                System.out.println("Authorization rules configured");
+                logger.info("Authorization rules configured");
             })
             .oauth2ResourceServer(oauth2 -> {
-                System.out.println("Configuring OAuth2 resource server");
+                logger.info("Configuring OAuth2 resource server");
                 oauth2.jwt(jwt -> {
                     jwt.jwtAuthenticationConverter(jwtAuthenticationConverter());
                     jwt.decoder(jwtDecoder());
-                    System.out.println("JWT authentication converter and decoder configured");
+                    logger.info("JWT authentication converter and decoder configured");
                 });
             });
 
-        System.out.println("Security filter chain configuration completed");
+        logger.info("Security filter chain configuration completed");
         return http.build();
     }
 
@@ -123,7 +123,7 @@ public class SecurityConfig {
         // Validation de l'issuer (plus permissive pour les tests)
         validators.add(new JwtIssuerValidator("http://localhost:8080/realms/RepasKeycloak"));
 
-        System.out.println("JWT validator configured with issuer validation for Keycloak");
+        logger.info("JWT validator configured with issuer validation for Keycloak");
         return new DelegatingOAuth2TokenValidator<>(validators);
     }
 

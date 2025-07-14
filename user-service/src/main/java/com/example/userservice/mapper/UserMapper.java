@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Component
@@ -32,27 +31,8 @@ public class UserMapper {
         );
     }
 
-    /**
-     * Convertit une UserEntity en UserDTO
-     */
-    public UserDTO toUserDTO(UserEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        
-        return new UserDTO(
-            entity.getId(),
-            entity.getUsernameField(),
-            entity.getEmail(),
-            entity.getFirstName(),
-            entity.getLastName(),
-            entity.getPhoneNumber(),
-            entity.getRole().name(),
-            entity.isEnabled(),
-            entity.getCreatedAt(),
-            entity.getUpdatedAt()
-        );
-    }
+
+
 
     /**
      * Convertit un UserRequest en UserEntity (pour création)
@@ -119,24 +99,12 @@ public class UserMapper {
      */
     public List<UserResponse> toUserResponseList(List<UserEntity> entities) {
         if (entities == null) {
-            return null;
+            return List.of();
         }
-        
         return entities.stream()
                 .map(this::toUserResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    /**
-     * Convertit une liste d'entités en liste de UserDTO
-     */
-    public List<UserDTO> toUserDTOList(List<UserEntity> entities) {
-        if (entities == null) {
-            return null;
-        }
-        
-        return entities.stream()
-                .map(this::toUserDTO)
-                .collect(Collectors.toList());
-    }
+
 }

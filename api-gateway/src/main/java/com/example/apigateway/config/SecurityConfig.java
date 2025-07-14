@@ -2,7 +2,6 @@ package com.example.apigateway.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -38,16 +37,9 @@ public class SecurityConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
-    @Value("${jwt.secret-key}")
-    private String secretKey;
-    
-    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
-    private String jwkSetUri;
 
-    /**
-     * Décodeur JWT de débogage qui ne valide PAS la signature.
-     * ATTENTION : À N'UTILISER QUE POUR LE DÉBOGAGE.
-     */
+
+
     private static class UnsafeDebugJwtDecoder implements ReactiveJwtDecoder {
         @Override
         public Mono<Jwt> decode(String token) {
@@ -72,7 +64,6 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
-            .cors().and()
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()

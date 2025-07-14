@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service pour la gestion des utilisateurs avec synchronisation Keycloak
@@ -52,38 +51,36 @@ public class KeycloakUserService {
     @Transactional
     public UserEntity updateUserProfile(UserEntity currentUser, String firstName, String lastName, String email, String phoneNumber, String password) {
         try {
-            // 1. Mettre à jour dans PostgreSQL
-            if (firstName != null) currentUser.setFirstName(firstName);
-            if (lastName != null) currentUser.setLastName(lastName);
-            if (phoneNumber != null) currentUser.setPhoneNumber(phoneNumber);
-
-            // Gérer le changement de mot de passe
-            if (password != null && !password.trim().isEmpty()) {
-                currentUser.setPassword(passwordEncoder.encode(password));
-                log.info("Mot de passe mis à jour pour l'utilisateur: {}", currentUser.getEmail());
-            }
-
-            // Gérer le changement d'email
+            updateUserFields(currentUser, firstName, lastName, phoneNumber, password);
             String oldEmail = currentUser.getEmail();
-            if (email != null && !email.equals(oldEmail)) {
-                // Vérifier que le nouvel email n'existe pas déjà
-                if (userRepository.findByEmail(email).isPresent()) {
-                    throw new IllegalStateException("Email déjà utilisé: " + email);
-                }
-                currentUser.setEmail(email);
-            }
-
+            validateAndSetEmail(currentUser, email);
             UserEntity updatedUser = userRepository.save(currentUser);
             log.info("Utilisateur mis à jour dans PostgreSQL: {}", updatedUser.getEmail());
-
-            // 2. Mettre à jour dans Keycloak
             updateUserInKeycloak(oldEmail, firstName, lastName, email, password);
-
             return updatedUser;
-
         } catch (Exception e) {
             log.error("Erreur lors de la mise à jour du profil utilisateur: {}", e.getMessage());
             throw new KeycloakUserServiceException("Erreur lors de la mise à jour: " + e.getMessage(), e);
+        }
+    }
+
+    private void updateUserFields(UserEntity user, String firstName, String lastName, String phoneNumber, String password) {
+        if (firstName != null) user.setFirstName(firstName);
+        if (lastName != null) user.setLastName(lastName);
+        if (phoneNumber != null) user.setPhoneNumber(phoneNumber);
+        if (password != null && !password.trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(password));
+            log.info("Mot de passe mis à jour pour l'utilisateur: {}", user.getEmail());
+        }
+    }
+
+    private void validateAndSetEmail(UserEntity user, String newEmail) {
+        String oldEmail = user.getEmail();
+        if (newEmail != null && !newEmail.equals(oldEmail)) {
+            if (userRepository.findByEmail(newEmail).isPresent()) {
+                throw new IllegalStateException("Email déjà utilisé: " + newEmail);
+            }
+            user.setEmail(newEmail);
         }
     }
 
@@ -177,12 +174,6 @@ public class KeycloakUserService {
         return userService.getAllUsers();
     }
 
-    /**
-     * Récupère un utilisateur par ID
-     */
-    public UserEntity getUserById(Long id) {
-        return userService.findById(id);
-    }
 
     /**
      * Vérifie si l'utilisateur connecté a le rôle ADMIN

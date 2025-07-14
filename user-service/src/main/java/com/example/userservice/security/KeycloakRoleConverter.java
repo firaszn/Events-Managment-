@@ -6,30 +6,34 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
+
+    private static final Logger logger = LoggerFactory.getLogger(KeycloakRoleConverter.class);
 
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
 
-        System.out.println("Starting JWT token conversion");
-        System.out.println("JWT claims: " + jwt.getClaims());
+        logger.debug("Starting JWT token conversion");
+        logger.debug("JWT claims: {}", jwt.getClaims());
 
         // Check direct role claim first
         String directRole = jwt.getClaimAsString("role");
-        System.out.println("Direct role claim: " + directRole);
+        logger.debug("Direct role claim: {}", directRole);
         if (directRole != null) {
             addRoleWithBothFormats(authorities, directRole);
         }
 
         // Extract realm roles
         Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        System.out.println("Realm access: " + realmAccess);
+        logger.debug("Realm access: {}", realmAccess);
         if (realmAccess != null && realmAccess.containsKey("roles")) {
             @SuppressWarnings("unchecked")
             List<String> realmRoles = (List<String>) realmAccess.get("roles");
-            System.out.println("Realm roles found: " + realmRoles);
+            logger.debug("Realm roles found: {}", realmRoles);
 
             realmRoles.forEach(roleName -> {
                 // Ajouter tous les rôles pertinents (ADMIN, USER, etc.)
@@ -43,11 +47,11 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
 
         // If no roles found, add default USER role
         if (authorities.isEmpty()) {
-            System.out.println("No roles found, adding default USER role");
+            logger.debug("No roles found, adding default USER role");
             addRoleWithBothFormats(authorities, "USER");
         }
 
-        System.out.println("Final authorities: " + authorities);
+        logger.debug("Final authorities: {}", authorities);
         return authorities;
     }
 
@@ -57,11 +61,11 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
 
         // Add role with ROLE_ prefix
         String roleWithPrefix = "ROLE_" + upperRole;
-        System.out.println("Adding role with prefix: " + roleWithPrefix);
+        logger.debug("Adding role with prefix: {}", roleWithPrefix);
         authorities.add(new SimpleGrantedAuthority(roleWithPrefix));
 
         // Add role without prefix
-        System.out.println("Adding role without prefix: " + upperRole);
+        logger.debug("Adding role without prefix: {}", upperRole);
         authorities.add(new SimpleGrantedAuthority(upperRole));
     }
 }

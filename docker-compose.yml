@@ -25,8 +25,8 @@ services:
         condition: service_healthy
     networks:
       - microservices-network
-    environment:
-      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+#    environment:
+#      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
     healthcheck:
       test: ["CMD", "sh", "-c", "nc -z localhost 8761 || exit 1"]
       interval: 30s
@@ -50,6 +50,8 @@ services:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/userdb
       - KEYCLOAK_AUTH_SERVER_URL=http://host.docker.internal:8080
+      - SPRING_CONFIG_IMPORT=configserver:http://localhost:8888
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

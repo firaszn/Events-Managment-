@@ -8,16 +8,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Mapper pour convertir entre les entités User et les DTOs
- * Centralise toute la logique de conversion
- */
+
 @Component
 public class UserMapper {
 
-    /**
-     * Convertit une UserEntity en UserResponse
-     */
+
     public UserResponse toUserResponse(UserEntity entity) {
         if (entity == null) {
             return null;

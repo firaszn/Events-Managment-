@@ -8,9 +8,7 @@ import com.example.userservice.service.KeycloakUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -19,21 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Controller REST pour la gestion des utilisateurs
- * Utilise exclusivement des DTOs pour les échanges avec les clients
- *
- * Endpoints :
- * - GET /api/users - Liste tous les utilisateurs (ADMIN)
- * - GET /api/users/{id} - Détails d'un utilisateur (ADMIN)
- * - POST /api/users - Créer un utilisateur (ADMIN)
- * - PUT /api/users/{id} - Modifier un utilisateur (ADMIN)
- * - DELETE /api/users/{id} - Supprimer un utilisateur (ADMIN)
- * - GET /api/users/profile - Profil de l'utilisateur connecté
- * - PUT /api/users/profile - Modifier son profil
- * - PUT /api/users/change-password - Changer son mot de passe
- * - GET /api/users/download-pdf - Télécharger la liste des utilisateurs en PDF (ADMIN)
- */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -257,8 +240,6 @@ public class UserController {
         }
     }
 
-    /**
-     * GET /api/users/download-pdf - Télécharger la liste des utilisateurs en PDF (ADMIN uniquement)
-     */
+
 
 }

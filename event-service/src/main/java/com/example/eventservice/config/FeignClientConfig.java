@@ -1,7 +1,6 @@
 package com.example.eventservice.config;
 
 import feign.RequestInterceptor;
-import feign.RequestTemplate;
 import feign.Logger;
 import feign.codec.ErrorDecoder;
 import feign.Response;

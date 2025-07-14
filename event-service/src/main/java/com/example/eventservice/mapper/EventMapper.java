@@ -4,7 +4,6 @@ import com.example.eventservice.entity.EventEntity;
 import com.example.eventservice.model.EventRequest;
 import com.example.eventservice.model.EventResponse;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
 

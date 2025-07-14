@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Service de synchronisation entre Keycloak et PostgreSQL
@@ -124,7 +125,7 @@ public class UserSyncService {
                     .lastName(keycloakUser.getLastName())
                     .email(keycloakUser.getEmail())
                     .username(keycloakUser.getUsername() != null ? keycloakUser.getUsername() : keycloakUser.getEmail())
-                    .password(passwordEncoder.encode("KEYCLOAK_MANAGED"))
+                    .password(passwordEncoder.encode(UUID.randomUUID().toString())) // Mot de passe aléatoire, inutilisé car géré par Keycloak
                     .role(UserEntity.Role.valueOf(primaryRole.toUpperCase()))
                     .enabled(keycloakUser.isEnabled())
                     .createdAt(LocalDateTime.now())

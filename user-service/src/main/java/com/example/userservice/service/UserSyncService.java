@@ -14,9 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Service de synchronisation entre Keycloak et PostgreSQL
- */
+
 @Service
 @Slf4j
 @RequiredArgsConstructor

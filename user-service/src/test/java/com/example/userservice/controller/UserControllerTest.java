@@ -1,9 +1,7 @@
 package com.example.userservice.controller;
 
-import com.example.userservice.mapper.UserMapper;
 import com.example.userservice.model.UserResponse;
 import com.example.userservice.service.KeycloakUserService;
-import com.example.userservice.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -18,10 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class UserControllerTest {
-    @Mock
-    private UserService userService;
-    @Mock
-    private UserMapper userMapper;
+
     @Mock
     private KeycloakUserService keycloakUserService;
     @Mock

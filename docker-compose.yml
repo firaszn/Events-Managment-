@@ -49,6 +49,8 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/userdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - KEYCLOAK_AUTH_SERVER_URL=http://host.docker.internal:8080
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -67,7 +69,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5433/eventdb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/eventdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -86,7 +90,7 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5434/invitationdb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/invitationdb
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092
       - KEYCLOAK_AUTH_SERVER_URL=http://host.docker.internal:8080
     extra_hosts:
@@ -127,6 +131,34 @@ services:
       - KEYCLOAK_AUTH_SERVER_URL=http://host.docker.internal:8080
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - microservices-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    networks:
+      - microservices-network
 
 networks:
   microservices-network:

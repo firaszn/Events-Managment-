@@ -18,6 +18,7 @@ public class EmailService {
     private final JavaMailSender emailSender;
 
     public void sendEmail(String to, String subject, String text) {
+        log.info("Tentative d'envoi d'email à : {} | Sujet : {}", to, subject);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);
@@ -28,7 +29,7 @@ public class EmailService {
             
             log.info("Email envoyé avec succès à : {}", to);
         } catch (Exception e) {
-            log.error("Erreur lors de l'envoi de l'email à : {}", to, e);
+            log.error("Erreur lors de l'envoi de l'email à : {} | Sujet : {}", to, subject, e);
             throw new EmailSendException("Erreur lors de l'envoi de l'email", e);
         }
     }

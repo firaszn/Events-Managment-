@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../user/core/services/auth.service';
 import { NotificationService } from '../../notification/services/notification.service';
 import { NotificationComponent } from '../../notification/components/notification.component';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 
 @Component({
   selector: 'app-event-list',
@@ -501,7 +501,14 @@ export class EventListComponent implements OnInit {
     private authService: AuthService,
     private notificationService: NotificationService,
     private router: Router
-  ) {}
+  ) {
+    // Recharge la liste à chaque navigation sur /events
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd && this.router.url.startsWith('/events')) {
+        this.loadEvents();
+      }
+    });
+  }
 
   async ngOnInit() {
     // Afficher le spinner pendant 2 secondes minimum

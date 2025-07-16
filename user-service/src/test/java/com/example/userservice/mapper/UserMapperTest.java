@@ -1,12 +1,13 @@
 package com.example.userservice.mapper;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class UserMapperTest {
     @Test
-    void testUserMapperNotNull() {
+    void canInstantiate() {
         UserMapper mapper = new UserMapper();
-        assertNotNull(mapper);
+        assertThat(mapper).isNotNull();
     }
 } 

@@ -1,4 +1,4 @@
-package com.example.invitationservice.service;
+package com.example.notificationservice.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,12 +7,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class InvitationServiceTest {
+class EmailServiceTest {
     @Autowired
-    private InvitationService invitationService;
+    private EmailService emailService;
 
     @Test
     void contextLoads() {
-        assertThat(invitationService).isNotNull();
+        assertThat(emailService).isNotNull();
     }
 } 

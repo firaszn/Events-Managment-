@@ -1,15 +1,18 @@
 package com.example.userservice.controller;
 
-import com.example.userservice.service.KeycloakAuthService;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
 class KeycloakAuthControllerTest {
+    @Autowired
+    private KeycloakAuthController keycloakAuthController;
+
     @Test
-    void testKeycloakAuthControllerNotNull() {
-        KeycloakAuthService mockService = mock(KeycloakAuthService.class);
-        KeycloakAuthController controller = new KeycloakAuthController(mockService);
-        assertNotNull(controller);
+    void contextLoads() {
+        assertThat(keycloakAuthController).isNotNull();
     }
 } 

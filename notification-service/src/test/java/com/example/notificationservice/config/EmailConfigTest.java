@@ -1,18 +1,19 @@
-package com.example.invitationservice.service;
+package com.example.notificationservice.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class InvitationServiceTest {
+class EmailConfigTest {
     @Autowired
-    private InvitationService invitationService;
+    private JavaMailSender javaMailSender;
 
     @Test
     void contextLoads() {
-        assertThat(invitationService).isNotNull();
+        assertThat(javaMailSender).isNotNull();
     }
 } 

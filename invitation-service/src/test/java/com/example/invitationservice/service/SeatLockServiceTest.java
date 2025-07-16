@@ -7,12 +7,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class InvitationServiceTest {
+class SeatLockServiceTest {
     @Autowired
-    private InvitationService invitationService;
+    private SeatLockService seatLockService;
 
     @Test
     void contextLoads() {
-        assertThat(invitationService).isNotNull();
+        assertThat(seatLockService).isNotNull();
     }
 } 

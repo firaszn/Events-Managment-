@@ -1,23 +1,18 @@
 package com.example.userservice.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest
 class KeycloakServiceTest {
-    @InjectMocks
+    @Autowired
     private KeycloakService keycloakService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
     @Test
-    void testKeycloakServiceNotNull() {
-        assertNotNull(keycloakService);
+    void contextLoads() {
+        assertThat(keycloakService).isNotNull();
     }
 } 

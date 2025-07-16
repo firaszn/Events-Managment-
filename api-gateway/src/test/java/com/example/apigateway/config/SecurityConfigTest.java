@@ -1,4 +1,4 @@
-package com.example.userservice.security;
+package com.example.apigateway.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -64,12 +64,16 @@ public class SecurityConfig {
                 authorize
                     .requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/invitations/check/**").hasAnyRole("USER", ROLE_ADMIN)
+                    .requestMatchers(HttpMethod.GET, "/invitations/event/*/occupied-seats").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/invitations/event/*/lock-seat").hasAnyRole("USER", ROLE_ADMIN)
+                    .requestMatchers(HttpMethod.DELETE, "/invitations/event/*/release-seat").hasAnyRole("USER", ROLE_ADMIN)
                     .requestMatchers(HttpMethod.POST, "/invitations").hasAnyRole("USER", ROLE_ADMIN)
                     .requestMatchers(HttpMethod.PATCH, "/invitations/*/confirm").hasRole(ROLE_ADMIN)
                     .anyRequest().authenticated();
                 logger.debug("Security configuration: /invitations/check/** requires ROLE_USER or ROLE_ADMIN");
                 logger.debug("Security configuration: POST /invitations requires ROLE_USER or ROLE_ADMIN");
                 logger.debug("Security configuration: PATCH /invitations/*/confirm requires ROLE_ADMIN");
+                logger.debug("Security configuration: GET /invitations/event/*/occupied-seats is public");
             })
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {
                 jwt.jwtAuthenticationConverter(jwtAuthenticationConverter());
@@ -96,10 +100,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:4200"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

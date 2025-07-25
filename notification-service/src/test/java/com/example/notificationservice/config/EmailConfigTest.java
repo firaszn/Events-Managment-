@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,6 +15,6 @@ class EmailConfigTest {
 
     @Test
     void contextLoads() {
-        assertThat(javaMailSender).isNotNull();
+        assertThat(javaMailSender).isInstanceOf(JavaMailSenderImpl.class);
     }
 } 

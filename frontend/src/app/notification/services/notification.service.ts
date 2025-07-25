@@ -16,7 +16,7 @@ export class NotificationService {
 
   show(notification: Notification) {
     this.notificationSubject.next(notification);
-    
+
     if (notification.duration !== undefined) {
       setTimeout(() => {
         this.hide();
@@ -43,4 +43,4 @@ export class NotificationService {
       duration
     });
   }
-} 
+}

@@ -13,6 +13,11 @@ export interface EventDetails {
   created_at?: string;
   updated_at?: string;
   userRegistered?: boolean;
+  maxCapacity?: number;
+  waitlistEnabled?: boolean;
+  confirmedParticipants?: number;
+  waitlistCount?: number;
+  userWaitlistPosition?: number;
 }
 
 @Injectable({
@@ -24,6 +29,7 @@ export class AdminEventService {
   constructor(private http: HttpClient) {}
 
   getEvents(): Observable<EventDetails[]> {
+    // Utiliser l'endpoint avec l'utilisateur connecté pour avoir les compteurs
     return this.http.get<EventDetails[]>(this.apiUrl);
   }
 
@@ -33,5 +39,9 @@ export class AdminEventService {
 
   createEvent(eventData: Partial<EventDetails>): Observable<EventDetails> {
     return this.http.post<EventDetails>(this.apiUrl, eventData);
+  }
+
+  updateEvent(eventId: string, eventData: Partial<EventDetails>): Observable<EventDetails> {
+    return this.http.put<EventDetails>(`${this.apiUrl}/${eventId}`, eventData);
   }
 } 

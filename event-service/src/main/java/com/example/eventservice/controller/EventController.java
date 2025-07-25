@@ -6,6 +6,8 @@ import com.example.eventservice.mapper.EventMapper;
 import com.example.eventservice.model.EventRequest;
 import com.example.eventservice.model.EventResponse;
 import com.example.eventservice.service.EventService;
+import com.example.eventservice.service.EventReminderService;
+import com.example.eventservice.service.WaitlistService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -28,6 +30,8 @@ public class EventController {
     private final EventService eventService;
     private final EventMapper eventMapper;
     private final InvitationClient invitationClient;
+    private final EventReminderService eventReminderService;
+    private final WaitlistService waitlistService;
     private static final Logger logger = LoggerFactory.getLogger(EventController.class);
 
     @PostMapping
@@ -51,6 +55,10 @@ public class EventController {
         List<EventResponse> responses = events.stream()
             .map(event -> {
                 EventResponse response = eventMapper.toResponse(event);
+
+                // Log des valeurs importantes pour debug
+                logger.info("Event {}: maxCapacity={}, waitlistEnabled={}",
+                           event.getTitle(), event.getMaxCapacity(), event.getWaitlistEnabled());
                 
                 try {
                     logger.info("Checking registration for event ID: {} ({})", event.getId(), event.getTitle());
@@ -71,6 +79,54 @@ public class EventController {
                     logger.error("Full error details:", e);
                     response.setUserRegistered(false);
                 }
+
+                // Vérifier si l'utilisateur a une invitation en attente
+                try {
+                    ResponseEntity<Boolean> pendingResponse = invitationClient.hasUserPendingInvitation(event.getId(), userEmail);
+                    if (pendingResponse.getBody() != null) {
+                        response.setUserHasPendingInvitation(pendingResponse.getBody());
+                    } else {
+                        response.setUserHasPendingInvitation(false);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error checking pending invitation for event {}: {}", event.getId(), e.getMessage());
+                    response.setUserHasPendingInvitation(false);
+                }
+
+                // Ajout : Récupérer l'invitation de l'utilisateur pour ce event
+                try {
+                    List<com.example.eventservice.model.InvitationResponse> allInvitations = invitationClient.getAllInvitations().getBody();
+                    if (allInvitations != null) {
+                        allInvitations.stream()
+                            .filter(inv -> inv.getEventId().equals(event.getId()) && userEmail.equals(inv.getUserEmail()))
+                            .findFirst()
+                            .ifPresent(inv -> {
+                                if ("CANCELLED".equals(inv.getStatus())) {
+                                    response.setUserStatus("CANCELLED");
+                                }
+                            });
+                    }
+                } catch (Exception e) {
+                    logger.error("Error fetching invitation status for event {}: {}", event.getId(), e.getMessage());
+                }
+
+                // Ajouter les informations de liste d'attente
+                try {
+                    response.setConfirmedParticipants(waitlistService.getConfirmedParticipantsCount(event.getId()));
+                    response.setWaitlistCount(waitlistService.getWaitlistCount(event.getId()));
+
+                    // Position et statut de l'utilisateur dans la liste d'attente (si applicable)
+                    waitlistService.getUserWaitlistPosition(event.getId(), userEmail)
+                            .ifPresent(waitlistResponse -> {
+                                response.setUserWaitlistPosition(waitlistResponse.getPosition());
+                                response.setUserWaitlistStatus(waitlistResponse.getStatus());
+                            });
+                } catch (Exception e) {
+                    logger.error("Error fetching waitlist information for event {}: {}", event.getId(), e.getMessage());
+                    response.setConfirmedParticipants(0L);
+                    response.setWaitlistCount(0L);
+                }
+                
                 return response;
             })
             .toList();
@@ -80,10 +136,71 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventResponse> getEventById(@PathVariable Long id) {
+    public ResponseEntity<EventResponse> getEventById(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
         return eventService.getEventById(id)
-                .map(eventMapper::toResponse)
-                .map(ResponseEntity::ok)
+                .map(event -> {
+                    EventResponse response = eventMapper.toResponse(event);
+                    String userEmail = jwt != null ? jwt.getClaim("email") : null;
+                    
+                    if (userEmail != null) {
+                        // Vérifier l'inscription de l'utilisateur
+                        try {
+                            ResponseEntity<Boolean> registrationResponse = invitationClient.isUserRegisteredForEvent(event.getId(), userEmail);
+                            response.setUserRegistered(Boolean.TRUE.equals(registrationResponse.getBody()));
+                        } catch (Exception e) {
+                            logger.error("Error checking registration for event {}: {}", event.getId(), e.getMessage());
+                            response.setUserRegistered(false);
+                        }
+
+                        // Vérifier si l'utilisateur a une invitation en attente
+                        try {
+                            ResponseEntity<Boolean> pendingResponse = invitationClient.hasUserPendingInvitation(event.getId(), userEmail);
+                            if (pendingResponse.getBody() != null) {
+                                response.setUserHasPendingInvitation(pendingResponse.getBody());
+                            } else {
+                                response.setUserHasPendingInvitation(false);
+                            }
+                        } catch (Exception e) {
+                            logger.error("Error checking pending invitation for event {}: {}", event.getId(), e.getMessage());
+                            response.setUserHasPendingInvitation(false);
+                        }
+                        
+                        // Ajout : Récupérer l'invitation de l'utilisateur pour ce event
+                        try {
+                            List<com.example.eventservice.model.InvitationResponse> allInvitations = invitationClient.getAllInvitations().getBody();
+                            if (allInvitations != null) {
+                                allInvitations.stream()
+                                    .filter(inv -> inv.getEventId().equals(event.getId()) && userEmail.equals(inv.getUserEmail()))
+                                    .findFirst()
+                                    .ifPresent(inv -> {
+                                        if ("CANCELLED".equals(inv.getStatus())) {
+                                            response.setUserStatus("CANCELLED");
+                                        }
+                                    });
+                            }
+                        } catch (Exception e) {
+                            logger.error("Error fetching invitation status for event {}: {}", event.getId(), e.getMessage());
+                        }
+                        
+                        // Ajouter les informations de liste d'attente
+                        try {
+                            response.setConfirmedParticipants(waitlistService.getConfirmedParticipantsCount(event.getId()));
+                            response.setWaitlistCount(waitlistService.getWaitlistCount(event.getId()));
+
+                            waitlistService.getUserWaitlistPosition(event.getId(), userEmail)
+                                    .ifPresent(waitlistResponse -> {
+                                        response.setUserWaitlistPosition(waitlistResponse.getPosition());
+                                        response.setUserWaitlistStatus(waitlistResponse.getStatus());
+                                    });
+                        } catch (Exception e) {
+                            logger.error("Error fetching waitlist information for event {}: {}", event.getId(), e.getMessage());
+                            response.setConfirmedParticipants(0L);
+                            response.setWaitlistCount(0L);
+                        }
+                    }
+                    
+                    return ResponseEntity.ok(response);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -102,5 +219,23 @@ public class EventController {
         }
         eventService.deleteEvent(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Endpoint de test pour déclencher manuellement les rappels d'événements
+     * Utile pour les tests et la démonstration
+     */
+    @PostMapping("/test-reminders")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> triggerEventReminders() {
+        try {
+            logger.info("Déclenchement manuel des rappels d'événements");
+            eventReminderService.sendEventReminders();
+            return ResponseEntity.ok("Rappels d'événements déclenchés avec succès");
+        } catch (Exception e) {
+            logger.error("Erreur lors du déclenchement manuel des rappels : {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors du déclenchement des rappels : " + e.getMessage());
+        }
     }
 } 

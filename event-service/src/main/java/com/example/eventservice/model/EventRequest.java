@@ -19,4 +19,8 @@ public class EventRequest {
 
     @NotBlank(message = "Le lieu est obligatoire")
     private String location;
+
+    private Integer maxCapacity;
+
+    private Boolean waitlistEnabled;
 } 

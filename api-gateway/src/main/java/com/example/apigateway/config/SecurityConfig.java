@@ -68,11 +68,11 @@ public class SecurityConfig {
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .pathMatchers("/auth/**").permitAll()
+                .pathMatchers("/actuator/**").permitAll()
                 .pathMatchers("/events/**").authenticated()
-                .pathMatchers("/api/invitations/**").authenticated()
+                .pathMatchers("/invitations/**").authenticated()
                 .pathMatchers("/api/users/**").authenticated()
                 .pathMatchers("/api/password/**").authenticated()
-                .pathMatchers("/actuator/**").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

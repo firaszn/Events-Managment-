@@ -1,18 +1,26 @@
 package com.example.notificationservice.service;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.mail.javamail.JavaMailSender;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 class EmailServiceTest {
-    @Autowired
+    @Mock
+    private JavaMailSender javaMailSender;
+    @InjectMocks
     private EmailService emailService;
 
+    public EmailServiceTest() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
-    void contextLoads() {
-        assertThat(emailService).isNotNull();
+    void shouldSendEmail() {
+        emailService.sendEmail("to@example.com", "subject", "body");
+        // No exception means pass, but let's verify interaction
+        org.mockito.Mockito.verify(javaMailSender).send(org.mockito.Mockito.any(org.springframework.mail.SimpleMailMessage.class));
     }
 } 

@@ -8,13 +8,13 @@ import { Subscription } from 'rxjs';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="notification" 
+    <div *ngIf="notification"
          class="notification"
          [class.success]="notification.type === 'success'"
          [class.error]="notification.type === 'error'"
          [class.info]="notification.type === 'info'">
       <div class="notification-content">
-        <i class="fas" 
+        <i class="fas"
            [class.fa-check-circle]="notification.type === 'success'"
            [class.fa-exclamation-circle]="notification.type === 'error'"
            [class.fa-info-circle]="notification.type === 'info'">
@@ -118,4 +118,4 @@ export class NotificationComponent implements OnInit, OnDestroy {
   closeNotification() {
     this.notificationService.hide();
   }
-} 
+}

@@ -3,23 +3,51 @@
     "target": "http://localhost:8093",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "headers": {
+      "Connection": "keep-alive"
+    },
+    "timeout": 60000,
+    "proxyTimeout": 60000,
+    "followRedirects": true,
+    "ws": true
   },
   "/api": {
     "target": "http://localhost:8093",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "headers": {
+      "Connection": "keep-alive"
+    },
+    "timeout": 60000,
+    "proxyTimeout": 60000,
+    "followRedirects": true,
+    "ws": true
   },
   "/events": {
     "target": "http://localhost:8093",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "headers": {
+      "Connection": "keep-alive"
+    },
+    "timeout": 60000,
+    "proxyTimeout": 60000,
+    "followRedirects": true,
+    "ws": true
   },
   "/auth": {
     "target": "http://localhost:8080",
     "secure": false,
-    "changeOrigin": true
+    "changeOrigin": true,
+    "headers": {
+      "Connection": "keep-alive"
+    },
+    "timeout": 60000,
+    "proxyTimeout": 60000,
+    "followRedirects": true,
+    "ws": true
   }
 }

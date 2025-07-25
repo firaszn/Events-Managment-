@@ -24,7 +24,7 @@ export interface InvitationDetails {
 })
 export class AdminInvitationService {
   private apiUrl = '/invitations';
-  private refreshInterval = 30000; // 30 seconds
+  private refreshInterval = 5000; // 5 seconds pour une meilleure réactivité
   private refreshSubject = new Subject<void>();
   private refreshObservable: Observable<InvitationDetails[]>;
 
@@ -59,4 +59,4 @@ export class AdminInvitationService {
   triggerRefresh(): void {
     this.refreshSubject.next();
   }
-} 
+}

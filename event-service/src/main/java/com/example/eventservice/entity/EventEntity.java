@@ -34,6 +34,12 @@ public class EventEntity {
     @Column(name = "organizer_id", nullable = false)
     private String organizerId;
 
+    @Column(name = "max_capacity")
+    private Integer maxCapacity = 5; // 5 places par défaut
+
+    @Column(name = "waitlist_enabled")
+    private Boolean waitlistEnabled = true; // Liste d'attente activée par défaut
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

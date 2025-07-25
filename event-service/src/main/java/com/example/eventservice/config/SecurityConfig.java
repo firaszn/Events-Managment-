@@ -66,6 +66,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/prometheus").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/info").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/metrics").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {

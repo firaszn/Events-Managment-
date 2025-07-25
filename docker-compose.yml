@@ -91,8 +91,16 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/invitationdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092
       - KEYCLOAK_AUTH_SERVER_URL=http://host.docker.internal:8080
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://host.docker.internal:8080/realms/repaskeycloak
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://host.docker.internal:8080/realms/repaskeycloak/protocol/openid-connect/certs
+      - LOGGING_LEVEL_COM_EXAMPLE_INVITATIONSERVICE=DEBUG
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=DEBUG
+      - LOGGING_LEVEL_ORG_HIBERNATE_SQL=DEBUG
+      - LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASICBINDER=TRACE
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -132,6 +140,49 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # 8. Prometheus (Monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - microservices-network
+    depends_on:
+      - config-server
+      - eureka-server
+      - user-service
+      - event-service
+      - invitation-service
+      - notification-service
+      - api-gateway
+
+  # 9. Grafana (Visualisation)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - microservices-network
+    depends_on:
+      - prometheus
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
@@ -159,6 +210,10 @@ services:
       - zookeeper
     networks:
       - microservices-network
+
+volumes:
+  prometheus_data:
+  grafana_data:
 
 networks:
   microservices-network:

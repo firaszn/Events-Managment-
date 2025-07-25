@@ -9,6 +9,8 @@ import { AdminInvitationService, InvitationDetails } from '../services/admin-inv
 import { Subscription } from 'rxjs';
 import { NotificationService } from '../../notification/services/notification.service';
 import { NotificationComponent } from '../../notification/components/notification.component';
+import { InvitationService } from '../../invitation/services/invitation.service';
+import { WaitlistService } from '../../event/services/waitlist.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -18,7 +20,7 @@ import { NotificationComponent } from '../../notification/components/notificatio
   template: `
     <div class="admin-dashboard">
       <app-notification></app-notification>
-      
+
       <!-- Sidebar -->
       <div class="sidebar" [class.collapsed]="isSidebarCollapsed">
         <div class="sidebar-header">
@@ -44,6 +46,7 @@ import { NotificationComponent } from '../../notification/components/notificatio
           <div class="menu-item" (click)="setActiveMenu('invitations')" [class.active]="activeMenu === 'invitations'">
             <i class="fas fa-envelope"></i>
             <span>Invitations</span>
+            <span class="notification-badge" *ngIf="hasNewInvitations && activeMenu !== 'invitations'">{{ newInvitationsCount > 99 ? '99+' : newInvitationsCount }}</span>
             <div class="menu-indicator"></div>
           </div>
           <div class="menu-item logout" (click)="logout()">
@@ -198,21 +201,35 @@ import { NotificationComponent } from '../../notification/components/notificatio
                   <td>{{ invitation.eventTitle }}</td>
                   <td>{{ invitation.userEmail }}</td>
                   <td>
-                    <span class="status" [class.pending]="invitation.status === 'PENDING'" [class.confirmed]="invitation.status === 'CONFIRMED'" [class.cancelled]="invitation.status === 'CANCELLED'">
-                      {{ invitation.status }}
+                    <span class="status"
+                          [class.pending]="invitation.status === 'PENDING'"
+                          [class.confirmed]="invitation.status === 'CONFIRMED'"
+                          [class.cancelled]="invitation.status === 'CANCELLED'"
+                          [class.waitlist]="invitation.status === 'WAITLIST'">
+                      {{ getStatusDisplayText(invitation.status) }}
                     </span>
                   </td>
                   <td>{{ invitation.seatInfo ? 'Rangée ' + invitation.seatInfo.row + ', Place ' + invitation.seatInfo.number : 'N/A' }}</td>
                   <td>{{ invitation.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
                   <td class="actions">
-                    <button class="action-btn confirm" 
+                    <button class="action-btn confirm"
                             *ngIf="invitation.status === 'PENDING'"
-                            (click)="confirmInvitation(invitation.id)" 
-                            title="Confirmer">
+                            (click)="confirmInvitation(invitation.id)"
+                            title="Confirmer et envoyer email">
                       <i class="fas fa-check"></i>
                     </button>
-                    <button class="action-btn delete" 
-                            (click)="deleteInvitation(invitation.id)" 
+                    <span class="auto-managed"
+                          *ngIf="invitation.status === 'WAITLIST'"
+                          title="Gestion automatique - sera confirmé automatiquement lors d'une place libre">
+                      <i class="fas fa-robot"></i> Auto
+                    </span>
+                    <span class="confirmed-badge"
+                          *ngIf="invitation.status === 'CONFIRMED'"
+                          title="Invitation confirmée">
+                      <i class="fas fa-check-circle"></i> Confirmé
+                    </span>
+                    <button class="action-btn delete"
+                            (click)="deleteInvitation(invitation.id)"
                             title="Supprimer">
                       <i class="fas fa-trash"></i>
                     </button>
@@ -224,6 +241,160 @@ import { NotificationComponent } from '../../notification/components/notificatio
         </div>
       </div>
     </div>
+
+    <!-- Modal de création d'événement -->
+    <div class="modal-overlay" *ngIf="showCreateEventModal" (click)="closeCreateEventModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Créer un Nouvel Événement</h3>
+          <button class="close-btn" (click)="closeCreateEventModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <form (ngSubmit)="createEvent()" #eventForm="ngForm">
+          <div class="form-group">
+            <label for="title">Titre de l'événement *</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              [(ngModel)]="newEvent.title"
+              required
+              maxlength="100"
+              placeholder="Entrez le titre de l'événement"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              [(ngModel)]="newEvent.description"
+              rows="4"
+              maxlength="500"
+              placeholder="Décrivez votre événement"
+              class="form-control"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="location">Lieu *</label>
+            <input
+              type="text"
+              id="location"
+              name="location"
+              [(ngModel)]="newEvent.location"
+              required
+              maxlength="200"
+              placeholder="Entrez le lieu de l'événement"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="eventDate">Date et heure *</label>
+            <input
+              type="datetime-local"
+              id="eventDate"
+              name="eventDate"
+              [(ngModel)]="newEvent.eventDate"
+              required
+              [min]="getMinDate()"
+              class="form-control">
+          </div>
+
+          <!-- Capacité fixée à 5 places et liste d'attente activée automatiquement -->
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeCreateEventModal()" [disabled]="isCreatingEvent">
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="!eventForm.form.valid || isCreatingEvent">
+              <i class="fas fa-spinner fa-spin" *ngIf="isCreatingEvent"></i>
+              <i class="fas fa-plus" *ngIf="!isCreatingEvent"></i>
+              Créer l'événement
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal de modification d'événement -->
+    <div class="modal-overlay" *ngIf="showEditEventModal" (click)="closeEditEventModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Modifier l'Événement</h3>
+          <button class="close-btn" (click)="closeEditEventModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <form (ngSubmit)="updateEvent()" #editEventForm="ngForm" *ngIf="editingEvent">
+          <div class="form-group">
+            <label for="editTitle">Titre de l'événement *</label>
+            <input
+              type="text"
+              id="editTitle"
+              name="editTitle"
+              [(ngModel)]="editingEvent.title"
+              required
+              maxlength="100"
+              placeholder="Entrez le titre de l'événement"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="editDescription">Description</label>
+            <textarea
+              id="editDescription"
+              name="editDescription"
+              [(ngModel)]="editingEvent.description"
+              rows="4"
+              maxlength="500"
+              placeholder="Décrivez votre événement"
+              class="form-control"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="editLocation">Lieu *</label>
+            <input
+              type="text"
+              id="editLocation"
+              name="editLocation"
+              [(ngModel)]="editingEvent.location"
+              required
+              maxlength="200"
+              placeholder="Entrez le lieu de l'événement"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="editEventDate">Date et heure *</label>
+            <input
+              type="datetime-local"
+              id="editEventDate"
+              name="editEventDate"
+              [(ngModel)]="editingEvent.eventDate"
+              required
+              [min]="getMinDate()"
+              class="form-control">
+          </div>
+
+          <!-- Capacité fixée à 5 places et liste d'attente activée automatiquement -->
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeEditEventModal()" [disabled]="isUpdatingEvent">
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="!editEventForm.form.valid || isUpdatingEvent">
+              <i class="fas fa-spinner fa-spin" *ngIf="isUpdatingEvent"></i>
+              <i class="fas fa-save" *ngIf="!isUpdatingEvent"></i>
+               Modifier l'événement'
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   `
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
@@ -233,7 +404,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   events: EventDetails[] = [];
   invitations: InvitationDetails[] = [];
   private subscription: Subscription = new Subscription();
+
+  // Propriétés pour la création d'événement
+  showCreateEventModal = false;
   newEvent: Partial<EventDetails> = {};
+  isCreatingEvent = false;
+
+  // Propriétés pour la modification d'événement
+  showEditEventModal = false;
+  editingEvent: EventDetails | null = null;
+  isUpdatingEvent = false;
+
+  // Propriétés pour les notifications en temps réel
+  hasNewInvitations = false;
+  newInvitationsCount = 0;
 
   constructor(
     private router: Router,
@@ -241,15 +425,55 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private adminEventService: AdminEventService,
     private adminInvitationService: AdminInvitationService,
     private authManager: AuthManagerService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private invitationService: InvitationService,
+    private waitlistService: WaitlistService
   ) {}
 
   ngOnInit() {
     this.loadInitialData();
+    this.setupRealTimeInvitationUpdates();
   }
 
   ngOnDestroy() {
     this.subscription.unsubscribe();
+  }
+
+  setupRealTimeInvitationUpdates() {
+    // Écouter les créations d'invitation en temps réel
+    this.subscription.add(
+      this.invitationService.invitationCreated$.subscribe({
+        next: (newInvitation) => {
+          console.log('Nouvelle invitation créée:', newInvitation);
+
+          // Rafraîchir immédiatement les invitations
+          this.adminInvitationService.triggerRefresh();
+
+          // Si l'admin n'est pas déjà sur la section invitations, lui suggérer de voir
+          if (this.activeMenu !== 'invitations') {
+            // Marquer qu'il y a de nouvelles invitations
+            this.hasNewInvitations = true;
+            this.newInvitationsCount++;
+
+            this.notificationService.show({
+              message: `Nouvelle inscription : ${newInvitation.userEmail} pour "${newInvitation.eventTitle}" - Place: Rangée ${newInvitation.seatInfo.row}, Siège ${newInvitation.seatInfo.number} | Cliquez pour voir les invitations`,
+              type: 'info',
+              duration: 10000
+            });
+          } else {
+            // Si déjà sur la section invitations, notification plus courte
+            this.notificationService.show({
+              message: `✅ ${newInvitation.userEmail} s'est inscrit - Rangée ${newInvitation.seatInfo.row}, Siège ${newInvitation.seatInfo.number}`,
+              type: 'success',
+              duration: 5000
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Erreur dans l\'écoute des événements d\'invitation:', error);
+        }
+      })
+    );
   }
 
   loadInitialData() {
@@ -262,9 +486,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.adminInvitationService.getRefreshObservable().subscribe({
         next: (invitations) => {
-          this.invitations = invitations.sort((a, b) => 
+          const previousCount = this.invitations.length;
+
+          this.invitations = invitations.sort((a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
+
+          // Si c'est pas la première charge et qu'il y a de nouvelles invitations
+          const newCount = this.invitations.length;
+          if (previousCount > 0 && newCount > previousCount) {
+            const addedCount = newCount - previousCount;
+            console.log(`${addedCount} nouvelle(s) invitation(s) détectée(s) via polling`);
+          }
         },
         error: (error) => {
           console.error('Error loading invitations:', error);
@@ -296,6 +529,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   loadEvents() {
     this.adminEventService.getEvents().subscribe({
       next: (events: EventDetails[]) => {
+        // Log temporaire pour débogage - à supprimer en production
+        console.log('📊 Événements chargés pour débogage:', events.map(e => ({
+          title: e.title,
+          confirmedParticipants: e.confirmedParticipants,
+          maxCapacity: e.maxCapacity,
+          waitlistCount: e.waitlistCount
+        })));
+
         this.events = events;
       },
       error: (error: Error) => {
@@ -317,11 +558,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   onSearch(event: any) {
     const searchTerm = event.target.value.toLowerCase();
-    
+
     switch (this.activeMenu) {
       case 'users':
     if (searchTerm) {
-      this.users = this.users.filter(user => 
+      this.users = this.users.filter(user =>
         user.username.toLowerCase().includes(searchTerm) ||
         user.email.toLowerCase().includes(searchTerm) ||
         user.firstName.toLowerCase().includes(searchTerm) ||
@@ -334,7 +575,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
       case 'events':
         if (searchTerm) {
-          this.events = this.events.filter(event => 
+          this.events = this.events.filter(event =>
             event.title.toLowerCase().includes(searchTerm) ||
             event.description.toLowerCase().includes(searchTerm) ||
             event.location.toLowerCase().includes(searchTerm) ||
@@ -347,7 +588,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
       case 'invitations':
         if (searchTerm) {
-          this.invitations = this.invitations.filter(invitation => 
+          this.invitations = this.invitations.filter(invitation =>
             invitation.eventTitle.toLowerCase().includes(searchTerm) ||
             invitation.userEmail.toLowerCase().includes(searchTerm) ||
             invitation.status.toLowerCase().includes(searchTerm)
@@ -360,7 +601,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   onAdd() {
-    // Implémenter la logique d'ajout selon le menu actif
+    if (this.activeMenu === 'events') {
+      this.openCreateEventModal();
+    }
+    // Implémenter la logique d'ajout selon le menu actif pour les autres cas
   }
 
   editUser(user: UserDetails) {
@@ -470,6 +714,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   setActiveMenu(menu: 'users' | 'events' | 'invitations') {
     this.activeMenu = menu;
+
+    // Réinitialiser le badge si on va sur invitations
+    if (menu === 'invitations') {
+      this.hasNewInvitations = false;
+      this.newInvitationsCount = 0;
+    }
+
     if (menu === 'users') {
       this.loadUsers();
     } else if (menu === 'events') {
@@ -506,17 +757,62 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   createEvent() {
-    if (this.newEvent.title && this.newEvent.description && this.newEvent.location && this.newEvent.eventDate) {
-      this.adminEventService.createEvent(this.newEvent).subscribe({
-        next: () => {
-          this.loadEvents();
-          this.newEvent = {};
+    if (!this.newEvent.title || !this.newEvent.location || !this.newEvent.eventDate) {
+      this.notificationService.show({
+        message: 'Veuillez remplir tous les champs obligatoires',
+        type: 'error',
+        duration: 5000
+      });
+      return;
+    }
+
+    this.isCreatingEvent = true;
+
+    // Convertir la date en format ISO en préservant l'heure locale
+    const eventData = {
+      title: this.newEvent.title,
+      description: this.newEvent.description || '',
+      location: this.newEvent.location,
+      eventDate: this.formatDateToLocalISO(this.newEvent.eventDate!),
+      maxCapacity: this.newEvent.maxCapacity || undefined,
+      waitlistEnabled: this.newEvent.waitlistEnabled || false
+    };
+
+    this.adminEventService.createEvent(eventData).subscribe({
+      next: (createdEvent) => {
+        this.isCreatingEvent = false;
+        this.showCreateEventModal = false;
+        this.loadEvents(); // Recharger la liste des événements
+        this.newEvent = {}; // Réinitialiser le formulaire
+
+        this.notificationService.show({
+          message: 'Événement créé avec succès',
+          type: 'success',
+          duration: 5000
+        });
         },
         error: (error) => {
+        this.isCreatingEvent = false;
           console.error('Erreur lors de la création de l\'événement:', error);
-        }
-      });
+
+        let errorMessage = 'Erreur lors de la création de l\'événement';
+
+        // Gérer les erreurs spécifiques du backend
+        if (error.status === 400 && error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 403) {
+          errorMessage = 'Vous n\'avez pas les permissions pour créer un événement';
+        } else if (error.status === 401) {
+          errorMessage = 'Votre session a expiré, veuillez vous reconnecter';
     }
+
+        this.notificationService.show({
+          message: errorMessage,
+          type: 'error',
+          duration: 5000
+        });
+      }
+    });
   }
 
   deleteEvent(event: EventDetails) {
@@ -572,6 +868,23 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+
+
+  getStatusDisplayText(status: string): string {
+    switch (status) {
+      case 'PENDING':
+        return 'EN ATTENTE';
+      case 'CONFIRMED':
+        return 'CONFIRMÉ';
+      case 'CANCELLED':
+        return 'ANNULÉ';
+      case 'WAITLIST':
+        return 'LISTE D\'ATTENTE';
+      default:
+        return status;
+    }
+  }
+
   getContentTitle(): string {
     switch (this.activeMenu) {
       case 'users':
@@ -621,8 +934,71 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   editEvent(event: EventDetails) {
-    // Implémenter la logique de modification
-    console.log('Édition de l\'événement:', event);
+    // Créer une copie de l'événement pour éviter de modifier l'original
+    this.editingEvent = {
+      ...event,
+      eventDate: this.formatDateForInputLocal(event.eventDate)
+    };
+    this.showEditEventModal = true;
+    this.isUpdatingEvent = false;
+  }
+
+  updateEvent() {
+    if (!this.editingEvent?.title || !this.editingEvent?.location || !this.editingEvent?.eventDate) {
+      this.notificationService.show({
+        message: 'Veuillez remplir tous les champs obligatoires',
+        type: 'error',
+        duration: 5000
+      });
+      return;
+    }
+
+    this.isUpdatingEvent = true;
+
+    const eventData = {
+      title: this.editingEvent.title,
+      description: this.editingEvent.description || '',
+      location: this.editingEvent.location,
+      eventDate: this.formatDateToLocalISO(this.editingEvent.eventDate!),
+      maxCapacity: this.editingEvent.maxCapacity || undefined,
+      waitlistEnabled: this.editingEvent.waitlistEnabled || false
+    };
+
+    this.adminEventService.updateEvent(this.editingEvent.id, eventData).subscribe({
+      next: (updatedEvent) => {
+        this.isUpdatingEvent = false;
+        this.showEditEventModal = false;
+        this.loadEvents(); // Recharger la liste des événements
+        this.editingEvent = null; // Réinitialiser l'événement en cours de modification
+
+        this.notificationService.show({
+          message: 'Événement modifié avec succès',
+          type: 'success',
+          duration: 5000
+        });
+      },
+      error: (error) => {
+        this.isUpdatingEvent = false;
+        console.error('Erreur lors de la modification de l\'événement:', error);
+
+        let errorMessage = 'Erreur lors de la modification de l\'événement';
+
+        // Gérer les erreurs spécifiques du backend
+        if (error.status === 400 && error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 403) {
+          errorMessage = 'Vous n\'avez pas les permissions pour modifier cet événement';
+        } else if (error.status === 401) {
+          errorMessage = 'Votre session a expiré, veuillez vous reconnecter';
+        }
+
+        this.notificationService.show({
+          message: errorMessage,
+          type: 'error',
+          duration: 5000
+        });
+      }
+    });
   }
 
   isUpcoming(dateString: string): boolean {
@@ -637,7 +1013,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   isOngoing(dateString: string): boolean {
     const eventDate = new Date(dateString);
     const now = new Date();
-    
+
     // Vérifier si c'est le même jour en comparant année, mois et jour
     return eventDate.getFullYear() === now.getFullYear() &&
            eventDate.getMonth() === now.getMonth() &&
@@ -662,5 +1038,84 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  formatDateForInput(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+  }
+
+  /**
+   * Redistribuer manuellement des places depuis la liste d'attente
+   */
+  redistributeSlots(event: EventDetails, slots: number) {
+    this.waitlistService.redistributeSlots(Number(event.id), slots).subscribe({
+      next: () => {
+        this.notificationService.show({
+          message: `${slots} place(s) redistribuée(s) avec succès pour "${event.title}"`,
+          type: 'success',
+          duration: 5000
+        });
+        // Rafraîchir les données
+        this.loadEvents();
+      },
+      error: (error) => {
+        console.error('Erreur lors de la redistribution:', error);
+        this.notificationService.show({
+          message: 'Erreur lors de la redistribution des places',
+          type: 'error',
+          duration: 5000
+        });
+      }
+    });
+  }
+
+  /**
+   * Convertit une date locale en format ISO en préservant l'heure locale
+   * au lieu de convertir en UTC
+   */
+  private formatDateToLocalISO(dateString: string): string {
+    const date = new Date(dateString);
+    const timezoneOffset = date.getTimezoneOffset() * 60000; // Offset en millisecondes
+    const localISOTime = new Date(date.getTime() - timezoneOffset).toISOString();
+    return localISOTime;
+  }
+
+  /**
+   * Formate une date pour l'input datetime-local en préservant l'heure locale
+   */
+  private formatDateForInputLocal(dateString: string): string {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  getMinDate(): string {
+    const now = new Date();
+    return now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+  }
+
+  openCreateEventModal() {
+    this.showCreateEventModal = true;
+    this.newEvent = {
+      maxCapacity: 5,
+      waitlistEnabled: true
+    }; // Valeurs par défaut
+    this.isCreatingEvent = false;
+  }
+
+  closeCreateEventModal() {
+    this.showCreateEventModal = false;
+  }
+
+  closeEditEventModal() {
+    this.showEditEventModal = false;
+    this.editingEvent = null; // Clear editing event data
+    this.isUpdatingEvent = false;
   }
 }

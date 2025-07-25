@@ -8,7 +8,9 @@ import { AuthService } from '../../user/core/services/auth.service';
 import { AuthManagerService } from '../../user/core/services/auth-manager.service';
 import { forkJoin } from 'rxjs';
 import { Seat, OccupiedSeat } from '../models/seat.model';
-import { interval, Subscription } from 'rxjs';
+import { interval, Subscription, takeUntil, take } from 'rxjs';
+import { Subject } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-seat-selection',
@@ -28,8 +30,8 @@ import { interval, Subscription } from 'rxjs';
       <div class="seats-container">
         <div *ngFor="let row of seatingLayout; let i = index" class="row">
           <div class="row-number">{{i + 1}}</div>
-          <div *ngFor="let seat of row; let j = index" 
-               class="seat" 
+          <div *ngFor="let seat of row; let j = index"
+               class="seat"
                [class.occupied]="seat.isOccupied"
                [class.selected]="seat.isSelected"
                [class.locked]="seat.isLocked"
@@ -91,7 +93,7 @@ import { interval, Subscription } from 'rxjs';
       background: linear-gradient(to bottom, #e0e0e0, #f5f5f5);
       height: 50px;
       margin: 2rem auto;
-      width: 80%;
+      width: 60%;
       border-radius: 5px;
       display: flex;
       align-items: center;
@@ -108,7 +110,7 @@ import { interval, Subscription } from 'rxjs';
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-width: 600px;
+      max-width: 400px;
       margin: 0 auto;
       padding: 20px;
       background: #f8f9fa;
@@ -276,8 +278,9 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
   occupiedSeats: OccupiedSeat[] = [];
   lockedSeats: OccupiedSeat[] = [];
   private refreshSubscription?: Subscription;
-  private readonly ROWS = 10;
-  private readonly SEATS_PER_ROW = 12;
+  private readonly ROWS = 1;
+  private readonly SEATS_PER_ROW = 5;
+  private isLoading: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -290,27 +293,83 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    const profile = await this.authService.loadUserProfile();
-    this.userEmail = profile?.email || '';
+    try {
+      const profile = await this.authService.loadUserProfile();
+      this.userEmail = profile?.email || '';
 
-    this.route.params.subscribe(params => {
-      this.eventId = params['id'];
-      this.loadEventDetailsAndSeats();
-    });
+      this.route.params.subscribe(params => {
+        this.eventId = params['id'];
+        this.loadEventDetailsAndSeats();
+      });
 
-    // Rafraîchir les places occupées toutes les 3 secondes (après le chargement initial)
-    this.refreshSubscription = interval(3000).subscribe(() => {
-      this.loadOccupiedSeats();
-    });
+      // Vérifier s'il y a un verrou existant
+      this.eventService.checkStoredLock();
+
+      // S'abonner aux changements des places verrouillées
+      this.eventService.lockedSeats$
+        .pipe(
+          takeUntil(this.destroy$),
+          filter(state => state.eventId === this.eventId)
+        )
+        .subscribe(state => {
+          this.updateLockedSeats(state.seats);
+        });
+
+      // Rafraîchir les places occupées toutes les 3 secondes
+      this.refreshSubscription = interval(3000)
+        .pipe(
+          takeUntil(this.destroy$)
+        )
+        .subscribe(() => {
+          if (!this.isLoading) {
+            this.loadOccupiedSeats();
+          }
+        });
+
+      // Écouter les événements de fermeture de page
+      window.addEventListener('beforeunload', this.onBeforeUnload);
+    } catch (error) {
+      console.error('Error initializing component:', error);
+      this.notificationService.show({
+        message: 'Erreur lors de l\'initialisation.',
+        type: 'error',
+        duration: 5000
+      });
+    }
   }
+
+  private destroy$ = new Subject<void>();
 
   ngOnDestroy() {
     if (this.refreshSubscription) {
       this.refreshSubscription.unsubscribe();
     }
-    if (this.selectedSeat) {
-      this.eventService.stopSeatLockTimer();
-    }
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.eventService.stopSeatLockTimer();
+    window.removeEventListener('beforeunload', this.onBeforeUnload);
+  }
+
+  private onBeforeUnload = () => {
+    this.eventService.stopSeatLockTimer();
+  }
+
+  loadOccupiedSeats() {
+    this.invitationService.getOccupiedSeats(this.eventId).subscribe({
+      next: (occupiedSeats) => {
+        this.occupiedSeats = occupiedSeats;
+        this.updateOccupiedSeatsWithSelection(occupiedSeats);
+        this.updateAvailableSeats();
+      },
+      error: (error) => {
+        console.error('Error loading occupied seats:', error);
+        this.notificationService.show({
+          message: 'Erreur lors du chargement des places occupées.',
+          type: 'error',
+          duration: 5000
+        });
+      }
+    });
   }
 
   loadEventDetailsAndSeats() {
@@ -321,13 +380,13 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (result) => {
         this.eventTitle = result.event.title;
-        this.occupiedSeats = result.occupiedSeats; // Stocker immédiatement les places occupées
+        this.occupiedSeats = result.occupiedSeats;
         this.loadSeatingLayout(result.occupiedSeats);
       },
       error: (error) => {
         console.error('Error loading event details or seats:', error);
         this.notificationService.show({
-          message: 'Erreur lors du chargement des informations',
+          message: 'Erreur lors du chargement des informations.',
           type: 'error',
           duration: 5000
         });
@@ -369,20 +428,6 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadOccupiedSeats() {
-    this.invitationService.getOccupiedSeats(this.eventId).subscribe({
-      next: (occupiedSeats) => {
-        this.occupiedSeats = occupiedSeats;
-        // Mettre à jour seulement les places non sélectionnées
-        this.updateOccupiedSeatsWithSelection(occupiedSeats);
-        this.updateAvailableSeats();
-      },
-      error: (error) => {
-        console.error('Error loading occupied seats:', error);
-      }
-    });
-  }
-
   updateOccupiedSeatsWithSelection(occupiedSeats: OccupiedSeat[]) {
     // Réinitialiser toutes les places comme non occupées (sauf la sélectionnée)
     this.seatingLayout.forEach(row => {
@@ -394,17 +439,57 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Marquer les places occupées (sauf la sélectionnée)
+    // Marquer les places occupées
     occupiedSeats.forEach(occupiedSeat => {
-      const seat = this.seatingLayout[occupiedSeat.row - 1]?.[occupiedSeat.number - 1];
+      const seat = this.findSeat(occupiedSeat.row, occupiedSeat.number);
       if (seat && !this.isSelectedSeat(seat)) {
         seat.isOccupied = true;
       }
     });
+
+    // Réappliquer les verrous
+    this.eventService.lockedSeats$.pipe(
+      take(1)
+    ).subscribe(currentLockedSeats => {
+      if (currentLockedSeats.eventId === this.eventId) {
+        this.updateLockedSeats(currentLockedSeats.seats);
+      }
+    });
+  }
+
+  updateLockedSeats(lockedSeats: any[]) {
+    // Mettre à jour les places verrouillées dans le layout
+    this.seatingLayout.forEach(row => {
+      row.forEach(seat => {
+        // Vérifier si la place est verrouillée
+        const isLocked = lockedSeats.some(
+          locked => locked.row === seat.row && locked.number === seat.number
+        );
+        
+        // Si la place est verrouillée et n'est pas la place sélectionnée
+        if (isLocked && !this.isSelectedSeat(seat)) {
+          seat.isLocked = true;
+          seat.isOccupied = true;
+        }
+        // Si la place n'est pas verrouillée et n'est pas occupée
+        else if (!isLocked && !this.occupiedSeats.some(
+          occupied => occupied.row === seat.row && occupied.number === seat.number
+        )) {
+          seat.isLocked = false;
+          seat.isOccupied = false;
+        }
+      });
+    });
+    this.updateAvailableSeats();
   }
 
   onSeatClick(seat: Seat) {
     if (seat.isOccupied || seat.isLocked) {
+      this.notificationService.show({
+        message: 'Cette place est déjà occupée ou verrouillée.',
+        type: 'info',
+        duration: 3000
+      });
       return;
     }
 
@@ -417,19 +502,32 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
       // Si on clique sur un autre siège, on libère d'abord le siège actuel
       this.eventService.stopSeatLockTimer();
       this.selectedSeat.isSelected = false;
+      this.selectedSeat.isLocked = false;
+      this.selectedSeat.isOccupied = false;
     }
 
     seat.isSelected = true;
     this.selectedSeat = seat;
-    
+
     this.eventService.lockSeat(this.eventId, seat.row, seat.number).subscribe({
       next: () => {
         this.eventService.startSeatLockTimer(this.eventId, seat.row, seat.number);
+        seat.isLocked = true;
+        seat.isOccupied = true;
+        // Rafraîchir immédiatement pour voir les changements
+        this.loadOccupiedSeats();
       },
       error: (error) => {
         console.error('Erreur lors du verrouillage de la place:', error);
         seat.isSelected = false;
+        seat.isLocked = false;
+        seat.isOccupied = false;
         this.selectedSeat = null;
+        this.notificationService.show({
+          message: 'Erreur lors du verrouillage de la place. Veuillez réessayer.',
+          type: 'error',
+          duration: 5000
+        });
       }
     });
   }
@@ -476,11 +574,11 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error registering for event:', error);
         let errorMessage = 'Une erreur est survenue lors de l\'inscription.';
-        
+
         if (error.error?.message) {
           errorMessage = error.error.message;
         }
-        
+
         this.notificationService.show({
           message: errorMessage,
           type: 'error',
@@ -496,8 +594,26 @@ export class SeatSelectionComponent implements OnInit, OnDestroy {
   cancelSelection() {
     if (!this.selectedSeat) return;
 
+    const seat = this.selectedSeat;
     this.eventService.stopSeatLockTimer();
-    this.selectedSeat.isSelected = false;
-    this.selectedSeat = null;
+
+    // Libérer le verrou sur le serveur
+    this.eventService.releaseSeat(this.eventId, seat.row, seat.number).subscribe({
+      next: () => {
+        seat.isSelected = false;
+        seat.isLocked = false;
+        this.selectedSeat = null;
+        // Rafraîchir pour voir les changements
+        this.loadOccupiedSeats();
+      },
+      error: (error) => {
+        console.error('Erreur lors de la libération de la place:', error);
+        this.notificationService.show({
+          message: 'Erreur lors de la libération de la place.',
+          type: 'error',
+          duration: 5000
+        });
+      }
+    });
   }
-} 
+}

@@ -1,5 +1,5 @@
 // Variables
-$primary-color: #3f51b5;
+$primary-color: #6d28d9; // violet électrique
 $warn-color: #f44336;
 $background-color: #f5f7fa;
 $card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -339,7 +339,9 @@ $border-radius: 8px;
   position: relative;
   height: 100vh;
   min-height: 600px;
-  background-image: url('/assets/images/hero-bg.jpg');
+  background-image: radial-gradient(1000px circle at 10% 10%, rgba(99,102,241,.35), transparent 40%),
+                    radial-gradient(800px circle at 90% 20%, rgba(34,197,94,.35), transparent 35%),
+                    url('/assets/images/hero-bg.jpg');
   background-size: cover;
   background-position: center;
   display: flex;
@@ -356,7 +358,7 @@ $border-radius: 8px;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, rgba(0,0,0,0.6), rgba(0,0,0,0.3));
+    background: linear-gradient(45deg, rgba(2,6,23,0.7), rgba(2,6,23,0.35));
   }
 }
 
@@ -370,7 +372,10 @@ $border-radius: 8px;
     font-size: 4rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-shadow: 0 8px 24px rgba(2,6,23,0.25);
+    background: linear-gradient(90deg, #22d3ee, #a78bfa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   p {
@@ -400,8 +405,8 @@ $border-radius: 8px;
   }
 
   .btn-primary {
-    background: linear-gradient(45deg, #2196F3, #1976D2);
-    color: white;
+    background: linear-gradient(135deg, #22d3ee, #06b6d4);
+    color: #0b1324;
   }
 
   .btn-secondary {
@@ -413,13 +418,13 @@ $border-radius: 8px;
 // Features Section
 .features-section {
   padding: 100px 0;
-  background: #f8f9fa;
+  background: linear-gradient(180deg, #f8fafc, #eef2ff);
 
   .section-title {
     text-align: center;
     font-size: 2.5rem;
     margin-bottom: 60px;
-    color: #333;
+    color: #0f172a;
     position: relative;
 
     &::after {
@@ -430,7 +435,7 @@ $border-radius: 8px;
       transform: translateX(-50%);
       width: 50px;
       height: 3px;
-      background: #2196F3;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
     }
   }
 }
@@ -456,8 +461,10 @@ $border-radius: 8px;
   }
 
   .feature-icon {
-    font-size: 2.5rem;
-    color: #2196F3;
+    font-size: 2.8rem;
+    color: transparent;
+    background: conic-gradient(#22c55e, #06b6d4, #a78bfa, #f59e0b, #22c55e);
+    -webkit-background-clip: text;
     margin-bottom: 20px;
   }
 
@@ -476,7 +483,7 @@ $border-radius: 8px;
 // Events Section
 .events-section {
   padding: 80px 0;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
 
   .container {
     max-width: 1200px;
@@ -496,7 +503,7 @@ $border-radius: 8px;
       display: block;
       width: 60px;
       height: 3px;
-      background: #2196F3;
+      background: linear-gradient(135deg, #06b6d4, #6366f1);
       margin: 20px auto 0;
       border-radius: 3px;
     }
@@ -510,7 +517,7 @@ $border-radius: 8px;
   }
 
   .event-card {
-    background: white;
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
     border-radius: 15px;
     overflow: hidden;
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
@@ -597,7 +604,7 @@ $border-radius: 8px;
       }
 
       .btn-details {
-        background: linear-gradient(45deg, #2196F3, #1976D2);
+        background: linear-gradient(135deg, #22c55e, #0ea5e9);
         color: white;
         border: none;
         padding: 12px 25px;
@@ -612,7 +619,7 @@ $border-radius: 8px;
         box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
 
         &:hover {
-          background: linear-gradient(45deg, #1976D2, #1565C0);
+          background: linear-gradient(135deg, #0ea5e9, #6366f1);
           box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
         }
       }
@@ -652,7 +659,7 @@ $border-radius: 8px;
 // Statistics Section
 .stats-section {
   padding: 80px 0;
-  background: linear-gradient(45deg, #1976D2, #2196F3);
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
   color: white;
 }
 

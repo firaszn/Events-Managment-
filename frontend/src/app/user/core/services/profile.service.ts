@@ -8,6 +8,9 @@ export interface UserProfile {
   email: string;
   password?: string;
   phoneNumber: string;
+  // Champs facultatifs côté UI/API
+  avatarUrl?: string;
+  updatedAt?: string | number | Date;
 }
 
 @Injectable({

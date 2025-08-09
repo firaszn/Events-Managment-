@@ -31,6 +31,26 @@ import { Router, NavigationEnd } from '@angular/router';
           <p class="subtitle">Rejoignez-nous pour des moments inoubliables</p>
         </div>
 
+        <!-- KPI Stats -->
+        <div class="stats-row">
+          <div class="kpi-card gradient-blue">
+            <div class="kpi-value">{{ getTotalEvents() }}</div>
+            <div class="kpi-label">Total</div>
+          </div>
+          <div class="kpi-card gradient-green">
+            <div class="kpi-value">{{ getUpcomingCount() }}</div>
+            <div class="kpi-label">À venir</div>
+          </div>
+          <div class="kpi-card gradient-orange">
+            <div class="kpi-value">{{ getOngoingCount() }}</div>
+            <div class="kpi-label">En cours</div>
+          </div>
+          <div class="kpi-card gradient-purple">
+            <div class="kpi-value">{{ getPastCount() }}</div>
+            <div class="kpi-label">Passés</div>
+          </div>
+        </div>
+
       <!-- Search and Filter Section -->
       <div class="search-section">
         <div class="search-bar">
@@ -51,6 +71,16 @@ import { Router, NavigationEnd } from '@angular/router';
             {{filter.label}}
           </span>
         </div>
+        <div class="sort-row">
+          <label>
+            <i class="fas fa-sort"></i>
+            <select [(ngModel)]="sortSelected" (change)="filterEvents()">
+              <option value="dateAsc">Date croissante</option>
+              <option value="dateDesc">Date décroissante</option>
+              <option value="capacity">Places disponibles</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <!-- Events Grid -->
@@ -68,6 +98,9 @@ import { Router, NavigationEnd } from '@angular/router';
               <div class="date-day">{{ formatDateDay(event.eventDate) }}</div>
               <div class="date-month">{{ formatDateMonth(event.eventDate) }}</div>
             </div>
+            <button class="fav-btn" [class.active]="isFavorite(event)" (click)="toggleFavorite(event)" title="Ajouter aux favoris">
+              <i class="fas" [class.fa-heart]="isFavorite(event)" [class.fa-heart-broken]="!isFavorite(event)"></i>
+            </button>
           </div>
 
           <div class="event-content">
@@ -93,13 +126,21 @@ import { Router, NavigationEnd } from '@angular/router';
                 <span>{{ event.waitlistCount }} en attente</span>
               </div>
               <!-- Position dans la liste d'attente pour l'utilisateur -->
-              <div class="detail-item waitlist-position" *ngIf="event.userWaitlistPosition">
+              <div class="detail-item waitlist-position" *ngIf="event.userWaitlistPosition && !event.userRegistered">
                 <i class="fas fa-hourglass-half"></i>
                 <span>Position {{ event.userWaitlistPosition }} en liste d'attente</span>
               </div>
             </div>
 
             <div class="event-footer">
+              <!-- Progress bar capacity -->
+              <div class="capacity" *ngIf="event.maxCapacity">
+                <div class="bar">
+                  <div class="fill" [style.width.%]="getCapacityPercent(event)"></div>
+                </div>
+                <small>{{ event.confirmedParticipants || 0 }} / {{ event.maxCapacity }} places</small>
+              </div>
+
               <!-- Bouton d'inscription normal -->
               <button
                 class="custom-button"
@@ -118,7 +159,7 @@ import { Router, NavigationEnd } from '@angular/router';
                 class="custom-button cancel-button"
                 [disabled]="isPast(event.eventDate)"
                 (click)="cancelRegistration(event)"
-                *ngIf="isLoggedIn && !isAdmin && (event.userRegistered || event.userHasPendingInvitation) && event.userStatus !== 'CANCELLED'">
+                *ngIf="isLoggedIn && !isAdmin && (event.userRegistered || event.userHasPendingInvitation) && event.userStatus !== 'CANCELLED' && !event.userWaitlistPosition">
                 <i class="fas fa-times-circle"></i>
                 <span>Annuler inscription</span>
               </button>
@@ -137,7 +178,7 @@ import { Router, NavigationEnd } from '@angular/router';
               <button
                 class="custom-button waitlist-status"
                 [disabled]="true"
-                *ngIf="isLoggedIn && !isAdmin && event.userWaitlistPosition && !isWaitlistNotified(event) && event.userStatus !== 'CANCELLED'">
+                *ngIf="isLoggedIn && !isAdmin && event.userWaitlistPosition && !isWaitlistNotified(event) && !event.userRegistered && event.userStatus !== 'CANCELLED'">
                 <i class="fas fa-hourglass-half"></i>
                 <span>En liste d'attente ({{ event.userWaitlistPosition }}ème)</span>
               </button>
@@ -147,7 +188,7 @@ import { Router, NavigationEnd } from '@angular/router';
                 class="custom-button confirm-waitlist-button"
                 [disabled]="isPast(event.eventDate)"
                 (click)="confirmWaitlistSpot(event)"
-                *ngIf="isLoggedIn && !isAdmin && isWaitlistNotified(event) && event.userStatus !== 'CANCELLED'">
+                *ngIf="isLoggedIn && !isAdmin && isWaitlistNotified(event) && !event.userRegistered && event.userStatus !== 'CANCELLED'">
                 <i class="fas fa-check-circle"></i>
                 <span>Confirmer ma place</span>
               </button>
@@ -168,6 +209,12 @@ import { Router, NavigationEnd } from '@angular/router';
                 *ngIf="isLoggedIn && !isAdmin && event.userStatus === 'CANCELLED'">
                 <i class="fas fa-ban"></i>
                 <span>Inscription annulée</span>
+              </button>
+
+              <!-- Action originale: ajouter au calendrier (ICS) -->
+              <button class="add-calendar" type="button" (click)="downloadIcs(event)" title="Ajouter au calendrier">
+                <i class="fas fa-calendar-plus"></i>
+                <span>Ajouter au calendrier</span>
               </button>
             </div>
           </div>
@@ -196,6 +243,15 @@ import { Router, NavigationEnd } from '@angular/router';
       min-height: 100vh;
       background-color: #f8f9fa;
     }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { border-radius: 14px; padding: 16px; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.08); text-align: center; }
+    .kpi-card .kpi-value { font-size: 28px; font-weight: 800; line-height: 1; }
+    .kpi-card .kpi-label { opacity: .95; margin-top: 6px; font-weight: 600; }
+    .gradient-blue { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+    .gradient-green { background: linear-gradient(135deg, #22c55e, #10b981); }
+    .gradient-orange { background: linear-gradient(135deg, #f59e0b, #f97316); }
+    .gradient-purple { background: linear-gradient(135deg, #a78bfa, #f472b6); }
 
     /* Spinner Styles */
     .spinner-container {
@@ -249,6 +305,10 @@ import { Router, NavigationEnd } from '@angular/router';
     .search-section {
       margin-bottom: 30px;
     }
+
+    .sort-row { margin-top: -10px; }
+    .sort-row label { display: inline-flex; align-items: center; gap: 8px; color: #475569; font-weight: 600; }
+    .sort-row select { border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; background: #fff; }
 
     .search-bar {
       display: flex;
@@ -330,6 +390,9 @@ import { Router, NavigationEnd } from '@angular/router';
       background: linear-gradient(135deg, #2196F3, #1976D2);
       color: white;
     }
+
+    .fav-btn { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35); color: #fff; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; cursor: pointer; }
+    .fav-btn.active { background: #ef4444; border-color: transparent; }
 
     .event-status {
       padding: 6px 12px;
@@ -418,6 +481,12 @@ import { Router, NavigationEnd } from '@angular/router';
       padding-top: 20px;
       border-top: 1px solid #eee;
     }
+
+    .capacity { margin-bottom: 14px; }
+    .capacity .bar { height: 8px; border-radius: 999px; background: #e5e7eb; overflow: hidden; }
+    .capacity .fill { height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); width: 0; transition: width .35s ease; }
+    .add-calendar { margin-top: 10px; width: 100%; background: #fff; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; display: inline-flex; align-items: center; gap: 8px; justify-content: center; cursor: pointer; }
+    .add-calendar:hover { background: #f8fafc; }
 
     .custom-button {
       width: 100%;
@@ -570,6 +639,8 @@ import { Router, NavigationEnd } from '@angular/router';
         padding: 20px;
       }
 
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+
       .events-grid {
         grid-template-columns: 1fr;
       }
@@ -618,6 +689,8 @@ export class EventListComponent implements OnInit {
   userEmail: string = '';
   searchTerm: string = '';
   isLoading = true;
+  sortSelected: 'dateAsc' | 'dateDesc' | 'capacity' = 'dateAsc';
+  favorites = new Set<string>();
 
   filters = [
     { label: 'Tous', active: true, type: 'all' },
@@ -665,6 +738,12 @@ export class EventListComponent implements OnInit {
             this.invitationService.isUserRegistered(event.id, this.userEmail).subscribe({
               next: (isRegistered) => {
                 event.userRegistered = isRegistered;
+                // Si l'utilisateur est maintenant inscrit et qu'il était en liste d'attente,
+                // s'assurer que les données de liste d'attente sont nettoyées
+                if (isRegistered && event.userWaitlistPosition) {
+                  event.userWaitlistPosition = undefined;
+                  event.userWaitlistStatus = undefined;
+                }
               },
               error: (error) => {
                 console.error(`Error checking registration for event ${event.id}:`, error);
@@ -726,6 +805,20 @@ export class EventListComponent implements OnInit {
       });
     }
 
+    // Sorting
+    filtered = [...filtered];
+    switch (this.sortSelected) {
+      case 'dateAsc':
+        filtered.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+        break;
+      case 'dateDesc':
+        filtered.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+        break;
+      case 'capacity':
+        filtered.sort((a, b) => (b.maxCapacity || 0) - (a.maxCapacity || 0));
+        break;
+    }
+
     this.filteredEvents = filtered;
   }
 
@@ -746,6 +839,60 @@ export class EventListComponent implements OnInit {
 
     // Rediriger vers la page de sélection des places
     this.router.navigate(['/events', event.id, 'select-seat']);
+  }
+
+  // Stats/KPIs
+  getTotalEvents(): number { return this.filteredEvents.length || this.events.length; }
+  getUpcomingCount(): number { return this.events.filter(e => this.isUpcoming(e.eventDate)).length; }
+  getOngoingCount(): number { return this.events.filter(e => this.isOngoing(e.eventDate)).length; }
+  getPastCount(): number { return this.events.filter(e => this.isPast(e.eventDate)).length; }
+
+  // Favorites
+  toggleFavorite(event: EventResponse) {
+    const key = String(event.id);
+    if (this.favorites.has(key)) this.favorites.delete(key); else this.favorites.add(key);
+    try { localStorage.setItem('event-favorites', JSON.stringify([...this.favorites])); } catch {}
+  }
+  isFavorite(event: EventResponse): boolean { return this.favorites.has(String(event.id)); }
+
+  // Capacity percent for progress bar
+  getCapacityPercent(event: EventResponse): number {
+    if (!event.maxCapacity) return 0;
+    const used = event.confirmedParticipants || 0;
+    return Math.min(100, Math.round((used / event.maxCapacity) * 100));
+  }
+
+  // Download ICS file to add to calendar
+  downloadIcs(event: EventResponse) {
+    const start = new Date(event.eventDate);
+    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+    const toIcs = (d: Date) => (
+      d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+    );
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Event Manager//EN',
+      'BEGIN:VEVENT',
+      `UID:${event.id}@event-manager`,
+      `DTSTAMP:${toIcs(new Date())}`,
+      `DTSTART:${toIcs(start)}`,
+      `DTEND:${toIcs(end)}`,
+      `SUMMARY:${(event.title || '').replace(/\n/g, ' ')}`,
+      `DESCRIPTION:${(event.description || '').replace(/\n/g, ' ')}`,
+      `LOCATION:${(event.location || '').replace(/\n/g, ' ')}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${event.title || 'event'}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   /**
@@ -781,6 +928,9 @@ export class EventListComponent implements OnInit {
         // Mettre à jour l'événement localement
         event.userWaitlistPosition = response.position;
         event.waitlistCount = (event.waitlistCount || 0) + 1;
+        // S'assurer que les données d'inscription sont nettoyées
+        event.userRegistered = false;
+        event.userHasPendingInvitation = false;
 
         console.log('Rechargement des événements...');
         // Recharger les événements pour avoir les données à jour
@@ -841,12 +991,19 @@ export class EventListComponent implements OnInit {
           duration: 5000
         });
 
-        // Mettre à jour l'événement localement
-        event.userRegistered = true;
-        event.userWaitlistPosition = undefined;
-        (event as any).userWaitlistStatus = 'CONFIRMED';
+        console.log('=== AVANT mise à jour ===');
+        this.debugEventState(event);
 
-        // Recharger les événements pour avoir les données à jour
+        // Mettre à jour l'événement localement pour afficher immédiatement le bouton "Annuler inscription"
+        event.userRegistered = true;
+        event.userHasPendingInvitation = true; // Pour s'assurer que le bouton d'annulation s'affiche
+        event.userWaitlistPosition = undefined;
+        event.userWaitlistStatus = 'CONFIRMED';
+
+        console.log('=== APRÈS mise à jour ===');
+        this.debugEventState(event);
+
+        // Recharger les événements pour avoir les données à jour depuis le backend
         this.loadEvents();
       },
       error: (error) => {
@@ -882,8 +1039,11 @@ export class EventListComponent implements OnInit {
             duration: 5000
           });
 
+          // Nettoyer toutes les données d'inscription et de liste d'attente
           event.userRegistered = false;
           event.userHasPendingInvitation = false;
+          event.userWaitlistPosition = undefined;
+          event.userWaitlistStatus = undefined;
           event.userStatus = 'CANCELLED'; // Affiche immédiatement le bouton bloqué
 
           // Optionnel : tu peux aussi recharger la liste si tu veux synchroniser avec le backend
@@ -951,5 +1111,21 @@ export class EventListComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  /**
+   * Méthode de debug pour afficher l'état d'un événement
+   */
+  debugEventState(event: EventResponse): void {
+    console.log('=== État de l\'événement ===');
+    console.log('ID:', event.id);
+    console.log('Titre:', event.title);
+    console.log('userRegistered:', event.userRegistered);
+    console.log('userHasPendingInvitation:', event.userHasPendingInvitation);
+    console.log('userWaitlistPosition:', event.userWaitlistPosition);
+    console.log('userWaitlistStatus:', event.userWaitlistStatus);
+    console.log('userStatus:', event.userStatus);
+    console.log('isWaitlistNotified:', this.isWaitlistNotified(event));
+    console.log('========================');
   }
 }

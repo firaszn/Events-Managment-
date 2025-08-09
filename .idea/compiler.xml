@@ -23,11 +23,15 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.5.5.Final/mapstruct-processor-1.5.5.Final.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.5.5.Final/mapstruct-1.5.5.Final.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.5.5.Final/mapstruct-processor-1.5.5.Final.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.5.5.Final/mapstruct-1.5.5.Final.jar" />
         </processorPath>
         <module name="event-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="logging-service" target="17" />
       <module name="microservices" target="17" />
       <module name="user-service (1)" target="17" />
     </bytecodeTargetLevel>
@@ -39,6 +43,7 @@
       <module name="config-server" options="-parameters" />
       <module name="event-service" options="-parameters" />
       <module name="invitation-service" options="-parameters" />
+      <module name="logging-service" options="-parameters" />
       <module name="microservices" options="-parameters" />
       <module name="notification-service" options="-parameters" />
       <module name="serverdiscover" options="-parameters" />

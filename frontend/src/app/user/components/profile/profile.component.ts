@@ -27,6 +27,13 @@ export class ProfileComponent implements OnInit {
   profileForm: FormGroup;
   isLoading = false;
   isSaving = false;
+  // Avatar preview (local only)
+  avatarPreviewUrl: string | null = null;
+  avatarFile: File | null = null;
+  // Password strength (0..4)
+  passwordStrength = 0;
+  // History metadata
+  lastUpdated: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -45,6 +52,10 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit() {
     this.loadUserProfile();
+    // Mettre à jour la jauge de mot de passe en direct
+    this.profileForm.get('password')?.valueChanges.subscribe((value: string) => {
+      this.passwordStrength = this.computePasswordStrength(value || '');
+    });
   }
 
   private loadUserProfile() {
@@ -61,6 +72,18 @@ export class ProfileComponent implements OnInit {
             email: profile.email || '',
             phoneNumber: profile.phoneNumber || ''
           });
+          // Avatar et historique si disponibles
+          if (profile.avatarUrl) {
+            this.avatarPreviewUrl = profile.avatarUrl;
+          }
+          if (profile.updatedAt) {
+            try {
+              const d = new Date(profile.updatedAt);
+              this.lastUpdated = d.toLocaleString('fr-FR');
+            } catch {
+              this.lastUpdated = String(profile.updatedAt);
+            }
+          }
         } catch (patchError) {
           console.error('Erreur lors de la mise à jour du formulaire:', patchError);
           this.showError('Erreur de format des données reçues');
@@ -98,6 +121,35 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  // Gestion de l'avatar (aperçu local)
+  onAvatarSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    this.avatarFile = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.avatarPreviewUrl = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeAvatar() {
+    this.avatarFile = null;
+    this.avatarPreviewUrl = null;
+  }
+
+  // Calcul simple de force de mot de passe (0..4)
+  private computePasswordStrength(pwd: string): number {
+    let score = 0;
+    if (!pwd) return 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    return Math.min(score, 4);
+  }
+
   onSubmit() {
     if (this.profileForm.valid) {
       this.isSaving = true;
@@ -115,6 +167,7 @@ export class ProfileComponent implements OnInit {
             panelClass: ['success-snackbar']
           });
           this.isSaving = false;
+          this.lastUpdated = new Date().toLocaleString('fr-FR');
           // Redirection vers la page d'accueil après 1 seconde
           setTimeout(() => {
             this.router.navigate(['/home']);

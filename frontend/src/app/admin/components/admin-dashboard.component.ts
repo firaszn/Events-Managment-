@@ -18,13 +18,14 @@ import { WaitlistService } from '../../event/services/waitlist.service';
   imports: [CommonModule, FormsModule, ReactiveFormsModule, NotificationComponent],
   styleUrls: ['./admin-dashboard.component.scss'],
   template: `
-    <div class="admin-dashboard">
+    <div class="admin-dashboard" [class.dark-theme]="isDarkTheme" [class.compact]="isCompactMode">
       <app-notification></app-notification>
 
       <!-- Sidebar -->
       <div class="sidebar" [class.collapsed]="isSidebarCollapsed">
         <div class="sidebar-header">
           <div class="logo-container">
+            <img class="brand-logo" src="assets/images/ai-summit.jpg" alt="Logo" (error)="hideBrandLogo($event)" />
             <i class="fas fa-shield-alt"></i>
             <h3>Event Manager</h3>
           </div>
@@ -33,6 +34,11 @@ import { WaitlistService } from '../../event/services/waitlist.service';
           </button>
         </div>
         <div class="sidebar-menu">
+          <div class="menu-item" (click)="setActiveMenu('overview')" [class.active]="activeMenu === 'overview'">
+            <i class="fas fa-home"></i>
+            <span>Tableau de bord</span>
+            <div class="menu-indicator"></div>
+          </div>
           <div class="menu-item" (click)="setActiveMenu('users')" [class.active]="activeMenu === 'users'">
             <i class="fas fa-users"></i>
             <span>Utilisateurs</span>
@@ -49,6 +55,26 @@ import { WaitlistService } from '../../event/services/waitlist.service';
             <span class="notification-badge" *ngIf="hasNewInvitations && activeMenu !== 'invitations'">{{ newInvitationsCount > 99 ? '99+' : newInvitationsCount }}</span>
             <div class="menu-indicator"></div>
           </div>
+          <div class="menu-item" (click)="setActiveMenu('waitlist')" [class.active]="activeMenu === 'waitlist'">
+            <i class="fas fa-chair"></i>
+            <span>Liste d'attente</span>
+            <div class="menu-indicator"></div>
+          </div>
+          <div class="menu-item" (click)="setActiveMenu('analytics')" [class.active]="activeMenu === 'analytics'">
+            <i class="fas fa-chart-line"></i>
+            <span>Analytique</span>
+            <div class="menu-indicator"></div>
+          </div>
+          <div class="menu-item" (click)="setActiveMenu('health')" [class.active]="activeMenu === 'health'">
+            <i class="fas fa-heartbeat"></i>
+            <span>Santé Système</span>
+            <div class="menu-indicator"></div>
+          </div>
+          <div class="menu-item" (click)="setActiveMenu('settings')" [class.active]="activeMenu === 'settings'">
+            <i class="fas fa-cog"></i>
+            <span>Paramètres</span>
+            <div class="menu-indicator"></div>
+          </div>
           <div class="menu-item logout" (click)="logout()">
             <i class="fas fa-sign-out-alt"></i>
             <span>Déconnexion</span>
@@ -58,6 +84,11 @@ import { WaitlistService } from '../../event/services/waitlist.service';
 
       <!-- Main Content -->
       <div class="main-content" [class.expanded]="isSidebarCollapsed">
+        <div class="bg-effects">
+          <span class="orb o1"></span>
+          <span class="orb o2"></span>
+          <span class="orb o3"></span>
+        </div>
         <div class="content-header">
           <div class="header-left">
             <h2>{{ getContentTitle() }}</h2>
@@ -68,6 +99,9 @@ import { WaitlistService } from '../../event/services/waitlist.service';
               <i class="fas fa-search"></i>
               <input type="text" placeholder="Rechercher..." (input)="onSearch($event)">
             </div>
+            <button class="theme-btn" (click)="toggleTheme()" [attr.aria-pressed]="isDarkTheme" title="Basculer le thème">
+              <i class="fas" [class.fa-moon]="!isDarkTheme" [class.fa-sun]="isDarkTheme"></i>
+            </button>
             <button class="refresh-btn" (click)="refreshData()" title="Rafraîchir">
               <i class="fas fa-sync-alt"></i>
             </button>
@@ -82,10 +116,10 @@ import { WaitlistService } from '../../event/services/waitlist.service';
         <div class="stats-container">
           <div class="stat-card">
             <div class="stat-icon total">
-              <i class="fas" [class.fa-users]="activeMenu === 'users'" [class.fa-calendar]="activeMenu === 'events'" [class.fa-envelope]="activeMenu === 'invitations'"></i>
+              <i class="fas" [class.fa-tachometer-alt]="activeMenu === 'overview'" [class.fa-users]="activeMenu === 'users'" [class.fa-calendar]="activeMenu === 'events'" [class.fa-envelope]="activeMenu === 'invitations'"></i>
             </div>
             <div class="stat-info">
-              <h3>{{ getStatsValue() }}</h3>
+              <h3>{{ animatedStats.total }}</h3>
               <p>{{ getStatsTitle() }}</p>
               <span class="trend up">↑ 12% ce mois</span>
             </div>
@@ -93,10 +127,10 @@ import { WaitlistService } from '../../event/services/waitlist.service';
 
           <div class="stat-card">
             <div class="stat-icon active">
-              <i class="fas" [class.fa-user-check]="activeMenu === 'users'" [class.fa-calendar-check]="activeMenu === 'events'" [class.fa-envelope-open]="activeMenu === 'invitations'"></i>
+              <i class="fas" [class.fa-star]="activeMenu === 'overview'" [class.fa-user-check]="activeMenu === 'users'" [class.fa-calendar-check]="activeMenu === 'events'" [class.fa-envelope-open]="activeMenu === 'invitations'"></i>
             </div>
             <div class="stat-info">
-              <h3>{{ getActiveStatsValue() }}</h3>
+              <h3>{{ animatedStats.active }}</h3>
               <p>{{ getActiveStatsTitle() }}</p>
               <span class="trend up">↑ 8% ce mois</span>
             </div>
@@ -104,13 +138,170 @@ import { WaitlistService } from '../../event/services/waitlist.service';
 
           <div class="stat-card">
             <div class="stat-icon inactive">
-              <i class="fas" [class.fa-user-times]="activeMenu === 'users'" [class.fa-calendar-times]="activeMenu === 'events'" [class.fa-envelope-open-text]="activeMenu === 'invitations'"></i>
+              <i class="fas" [class.fa-bell]="activeMenu === 'overview'" [class.fa-user-times]="activeMenu === 'users'" [class.fa-calendar-times]="activeMenu === 'events'" [class.fa-envelope-open-text]="activeMenu === 'invitations'"></i>
             </div>
             <div class="stat-info">
-              <h3>{{ getInactiveStatsValue() }}</h3>
+              <h3>{{ animatedStats.inactive }}</h3>
               <p>{{ getInactiveStatsTitle() }}</p>
               <span class="trend down">↓ 3% ce mois</span>
             </div>
+          </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="overview-grid" *ngIf="activeMenu === 'overview'">
+          <div class="kpi-card gradient-blue">
+            <div class="kpi-content">
+              <i class="fas fa-users"></i>
+              <div>
+                <h4>Utilisateurs</h4>
+                <p>{{ animatedKpi.users }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-card gradient-green">
+            <div class="kpi-content">
+              <i class="fas fa-calendar"></i>
+              <div>
+                <h4>Événements</h4>
+                <p>{{ animatedKpi.events }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-card gradient-orange">
+            <div class="kpi-content">
+              <i class="fas fa-envelope"></i>
+              <div>
+                <h4>Invitations</h4>
+                <p>{{ animatedKpi.invitations }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-card gradient-purple">
+            <div class="kpi-content">
+              <i class="fas fa-chair"></i>
+              <div>
+                <h4>Liste d'attente</h4>
+                <p>{{ animatedKpi.waitlist }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="card action-card">
+            <h4>Actions rapides</h4>
+            <div class="action-grid">
+              <button class="action-tile primary" (click)="setActiveMenu('events'); onAdd()">
+                <span class="icon"><i class="fas fa-calendar-plus"></i></span>
+                <div class="meta">
+                  <span class="title">Nouvel événement</span>
+                  <small>Créer un événement</small>
+                </div>
+              </button>
+              <button class="action-tile info" (click)="setActiveMenu('users')">
+                <span class="icon"><i class="fas fa-user-shield"></i></span>
+                <div class="meta">
+                  <span class="title">Gérer utilisateurs</span>
+                  <small>Rôles et permissions</small>
+                </div>
+              </button>
+              <button class="action-tile warning" (click)="setActiveMenu('invitations')">
+                <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                <div class="meta">
+                  <span class="title">Voir invitations</span>
+                  <small>Suivi des statuts</small>
+                </div>
+              </button>
+              <button class="action-tile neutral" (click)="refreshData()">
+                <span class="icon"><i class="fas fa-sync-alt"></i></span>
+                <div class="meta">
+                  <span class="title">Actualiser</span>
+                  <small>Mise à jour des données</small>
+                </div>
+              </button>
+            </div>
+          </div>
+          <div class="card activity">
+            <h4>Activité récente</h4>
+            <ul>
+              <li *ngFor="let inv of invitations | slice:0:6">
+                <i class="fas fa-bell"></i>
+                <span>{{ inv.userEmail }}</span>
+                <small>→ {{ inv.eventTitle }}</small>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="analytics-grid" *ngIf="activeMenu === 'analytics'">
+          <div class="chart-card">
+            <h4>Répartition</h4>
+            <div class="bar-chart">
+              <div class="bar" *ngFor="let d of getAnalyticsData()" [style.height.%]="getPercent(d.value, getAnalyticsMax())">
+                <span class="label">{{ d.label }}</span>
+                <span class="value">{{ d.value }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card gradient">
+            <h4>Tendance générale</h4>
+            <div class="sparkline">
+              <span *ngFor="let n of getSparkline()" [style.height.%]="n"></span>
+            </div>
+          </div>
+          <div class="chart-card donut-card">
+            <h4>Statut des invitations</h4>
+            <div class="donut" [style.background]="getDonutBackground()">
+              <div class="center">
+                <strong>{{ invitations.length }}</strong>
+                <span>Total</span>
+              </div>
+            </div>
+            <ul class="legend">
+              <li><span class="dot confirmed"></span>Confirmées</li>
+              <li><span class="dot pending"></span>En attente</li>
+              <li><span class="dot cancelled"></span>Annulées</li>
+              <li><span class="dot waitlist"></span>Liste attente</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="settings-panel" *ngIf="activeMenu === 'settings'">
+          <div class="setting-item">
+            <div>
+              <h4>Thème sombre</h4>
+              <p>Améliore le contraste et l'esthétique nocturne.</p>
+            </div>
+            <button class="toggle-switch" (click)="toggleTheme()" [class.active]="isDarkTheme"><span></span></button>
+          </div>
+          <div class="setting-item">
+            <div>
+              <h4>Mode compact</h4>
+              <p>Réduit l'espacement pour afficher plus d'informations à l'écran.</p>
+            </div>
+            <button class="toggle-switch" (click)="toggleCompact()" [class.active]="isCompactMode"><span></span></button>
+          </div>
+        </div>
+
+        <!-- Health Section -->
+        <div class="health-grid" *ngIf="activeMenu === 'health'">
+          <div class="health-card" *ngFor="let s of servicesHealth">
+            <div class="icon"><i class="fas" [class.fa-server]="true"></i></div>
+            <div class="meta">
+              <h5>{{ s.name }}</h5>
+              <p>Port {{ s.port }}</p>
+            </div>
+            <span class="status" [class.up]="s.status === 'UP'" [class.down]="s.status !== 'UP'">{{ s.status }}</span>
+          </div>
+        </div>
+
+        <!-- Waitlist Section (placeholder créatif) -->
+        <div class="waitlist-card" *ngIf="activeMenu === 'waitlist'">
+          <div class="illustration"><i class="fas fa-chair"></i></div>
+          <div class="content">
+            <h4>Gestion de la liste d'attente</h4>
+            <p>Visualisez les promotions automatiques et la capacité par événement.</p>
+            <button class="add-btn" (click)="setActiveMenu('events')"><i class="fas fa-calendar-plus"></i> Aller aux événements</button>
           </div>
         </div>
 
@@ -398,12 +589,25 @@ import { WaitlistService } from '../../event/services/waitlist.service';
   `
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
-  activeMenu: 'users' | 'events' | 'invitations' = 'users';
+  activeMenu: 'overview' | 'users' | 'events' | 'invitations' | 'waitlist' | 'analytics' | 'health' | 'settings' = 'overview';
   isSidebarCollapsed = false;
+  isDarkTheme = false;
+  isCompactMode = false;
   users: UserDetails[] = [];
   events: EventDetails[] = [];
   invitations: InvitationDetails[] = [];
   private subscription: Subscription = new Subscription();
+  animatedStats = { total: 0, active: 0, inactive: 0 };
+  animatedKpi = { users: 0, events: 0, invitations: 0, waitlist: 0 };
+  // Données de santé (mock initial, à brancher sur /actuator/health si voulu)
+  servicesHealth: Array<{ name: string; port: number; status: 'UP' | 'DOWN' }> = [
+    { name: 'API Gateway', port: 8093, status: 'UP' },
+    { name: 'Eureka', port: 8761, status: 'UP' },
+    { name: 'User Service', port: 8084, status: 'UP' },
+    { name: 'Event Service', port: 8082, status: 'UP' },
+    { name: 'Invitation Service', port: 8083, status: 'UP' },
+    { name: 'Notification Service', port: 8085, status: 'UP' }
+  ];
 
   // Propriétés pour la création d'événement
   showCreateEventModal = false;
@@ -430,9 +634,53 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private waitlistService: WaitlistService
   ) {}
 
+  hideBrandLogo(event: Event) {
+    const el = event.target as HTMLElement;
+    if (el && el.style) {
+      el.style.display = 'none';
+    }
+  }
+
   ngOnInit() {
     this.loadInitialData();
     this.setupRealTimeInvitationUpdates();
+    setTimeout(() => this.animateStatsAndKpis(), 0);
+  }
+  toggleTheme() {
+    this.isDarkTheme = !this.isDarkTheme;
+  }
+
+  toggleCompact() {
+    this.isCompactMode = !this.isCompactMode;
+  }
+
+  // Total liste d'attente réel (si disponible sur events.waitlistCount)
+  getTotalWaitlistCount(): number {
+    return this.events.reduce((sum, e: any) => sum + (Number((e as any).waitlistCount) || 0), 0);
+  }
+
+  // Animation helpers
+  private runningRafs: number[] = [];
+  private animateValue(start: number, end: number, durationMs: number, onUpdate: (v: number) => void) {
+    const startTs = performance.now();
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+    const step = (ts: number) => {
+      const progress = Math.min((ts - startTs) / durationMs, 1);
+      const eased = easeOut(progress);
+      const value = Math.round(start + (end - start) * eased);
+      onUpdate(value);
+      if (progress < 1) {
+        const raf = requestAnimationFrame(step);
+        this.runningRafs.push(raf);
+      }
+    };
+    const raf = requestAnimationFrame(step);
+    this.runningRafs.push(raf);
+  }
+
+  private cancelAnimations() {
+    this.runningRafs.forEach(id => cancelAnimationFrame(id));
+    this.runningRafs = [];
   }
 
   ngOnDestroy() {
@@ -498,6 +746,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             const addedCount = newCount - previousCount;
             console.log(`${addedCount} nouvelle(s) invitation(s) détectée(s) via polling`);
           }
+          this.animateStatsAndKpis();
         },
         error: (error) => {
           console.error('Error loading invitations:', error);
@@ -519,6 +768,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.adminUserService.getUsers().subscribe({
       next: (users: UserDetails[]) => {
         this.users = users;
+        this.animateStatsAndKpis();
       },
       error: (error: Error) => {
         console.error('Erreur lors du chargement des utilisateurs:', error);
@@ -538,6 +788,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         })));
 
         this.events = events;
+        this.animateStatsAndKpis();
       },
       error: (error: Error) => {
         console.error('Erreur lors du chargement des événements:', error);
@@ -624,8 +875,29 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return this.users.filter(user => !user.enabled).length;
   }
 
+  // Lance/relance les animations pour stats et KPIs
+  private animateStatsAndKpis() {
+    // Valeurs cibles
+    const totalTarget = this.getStatsValue();
+    const activeTarget = this.getActiveStatsValue();
+    const inactiveTarget = this.getInactiveStatsValue();
+
+    // Stat cards
+    this.animateValue(this.animatedStats.total, totalTarget, 600, v => (this.animatedStats.total = v));
+    this.animateValue(this.animatedStats.active, activeTarget, 700, v => (this.animatedStats.active = v));
+    this.animateValue(this.animatedStats.inactive, inactiveTarget, 800, v => (this.animatedStats.inactive = v));
+
+    // KPIs (overview)
+    this.animateValue(this.animatedKpi.users, this.users.length, 600, v => (this.animatedKpi.users = v));
+    this.animateValue(this.animatedKpi.events, this.events.length, 600, v => (this.animatedKpi.events = v));
+    this.animateValue(this.animatedKpi.invitations, this.invitations.length, 600, v => (this.animatedKpi.invitations = v));
+    this.animateValue(this.animatedKpi.waitlist, this.getTotalWaitlistCount(), 600, v => (this.animatedKpi.waitlist = v));
+  }
+
   getStatsTitle(): string {
     switch (this.activeMenu) {
+      case 'overview':
+        return 'Total éléments';
       case 'users':
         return 'Total Utilisateurs';
       case 'events':
@@ -639,6 +911,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getStatsValue(): number {
     switch (this.activeMenu) {
+      case 'overview':
+        return this.users.length + this.events.length + this.invitations.length;
       case 'users':
         return this.users.length;
       case 'events':
@@ -652,6 +926,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getActiveStatsTitle(): string {
     switch (this.activeMenu) {
+      case 'overview':
+        return 'Éléments actifs';
       case 'users':
         return 'Utilisateurs Actifs';
       case 'events':
@@ -665,6 +941,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getActiveStatsValue(): number {
     switch (this.activeMenu) {
+      case 'overview': {
+        const activeUsers = this.users.filter(u => u.enabled).length;
+        const upcomingEvents = this.events.filter(event => this.isUpcoming(event.eventDate)).length;
+        const acceptedInvitations = this.invitations.filter(inv => inv.status === 'CONFIRMED').length;
+        return activeUsers + upcomingEvents + acceptedInvitations;
+      }
       case 'users':
         return this.users.filter(user => user.enabled).length;
       case 'events':
@@ -678,6 +960,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getInactiveStatsTitle(): string {
     switch (this.activeMenu) {
+      case 'overview':
+        return 'À traiter';
       case 'users':
         return 'Utilisateurs Inactifs';
       case 'events':
@@ -691,6 +975,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getInactiveStatsValue(): number {
     switch (this.activeMenu) {
+      case 'overview': {
+        const inactiveUsers = this.users.filter(u => !u.enabled).length;
+        const pastEvents = this.events.filter(event => this.isPast(event.eventDate)).length;
+        const pendingInvitations = this.invitations.filter(inv => inv.status === 'PENDING').length;
+        return inactiveUsers + pastEvents + pendingInvitations;
+      }
       case 'users':
         return this.users.filter(user => !user.enabled).length;
       case 'events':
@@ -712,7 +1002,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`;
   }
 
-  setActiveMenu(menu: 'users' | 'events' | 'invitations') {
+  setActiveMenu(menu: 'overview' | 'users' | 'events' | 'invitations' | 'waitlist' | 'analytics' | 'health' | 'settings') {
     this.activeMenu = menu;
 
     // Réinitialiser le badge si on va sur invitations
@@ -721,11 +1011,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       this.newInvitationsCount = 0;
     }
 
-    if (menu === 'users') {
+    if (menu === 'users' || menu === 'overview' || menu === 'analytics') {
       this.loadUsers();
-    } else if (menu === 'events') {
+    }
+    if (menu === 'events' || menu === 'overview' || menu === 'analytics') {
       this.loadEvents();
     }
+    this.animateStatsAndKpis();
     // No need to load invitations here as they are automatically updated through polling
   }
 
@@ -887,12 +1179,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getContentTitle(): string {
     switch (this.activeMenu) {
+      case 'overview':
+        return 'Aperçu Global';
       case 'users':
         return 'Gestion des Utilisateurs';
       case 'events':
         return 'Gestion des Événements';
       case 'invitations':
         return 'Gestion des Invitations';
+      case 'waitlist':
+        return "Liste d'attente";
+      case 'analytics':
+        return 'Analytique';
+      case 'health':
+        return 'Santé du Système';
+      case 'settings':
+        return 'Paramètres';
       default:
         return '';
     }
@@ -900,12 +1202,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getContentSubtitle(): string {
     switch (this.activeMenu) {
+      case 'overview':
+        return 'Indicateurs clés et actions rapides';
       case 'users':
         return 'Gérez les utilisateurs, leurs rôles et leurs permissions';
       case 'events':
         return 'Créez et gérez les événements de votre plateforme';
       case 'invitations':
         return 'Suivez et gérez les invitations aux événements';
+      case 'waitlist':
+        return "Suivez la capacité et la redistribution automatique";
+      case 'analytics':
+        return 'Tendances et répartition';
+      case 'health':
+        return 'État des microservices et endpoints de santé';
+      case 'settings':
+        return 'Préférences d’affichage et thème';
       default:
         return '';
     }
@@ -913,6 +1225,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   getAddButtonText(): string {
     switch (this.activeMenu) {
+      case 'overview':
+        return 'Action';
       case 'events':
         return 'Événement';
       case 'invitations':
@@ -920,6 +1234,51 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       default:
         return '';
     }
+  }
+
+  getEstimatedWaitlistCount(): number {
+    // approximation simple basée sur les invitations en attente
+    return this.invitations.filter(i => i.status === 'WAITLIST' || i.status === 'PENDING').length;
+  }
+
+  getAnalyticsData(): Array<{ label: string; value: number }> {
+    return [
+      { label: 'Users', value: this.users.length },
+      { label: 'Events', value: this.events.length },
+      { label: 'Invites', value: this.invitations.length }
+    ];
+  }
+
+  getAnalyticsMax(): number {
+    return Math.max(...this.getAnalyticsData().map(d => d.value), 1);
+  }
+
+  getPercent(value: number, max: number): number {
+    return Math.round((value / max) * 100);
+  }
+
+  getSparkline(): number[] {
+    const base = this.getAnalyticsData().map(d => d.value);
+    const max = this.getAnalyticsMax();
+    return base.map(v => Math.round((v / max) * 100));
+  }
+
+  // Donut chart CSS-only: calc des pourcentages et génération de conic-gradient
+  getDonutBackground(): string {
+    const total = Math.max(this.invitations.length, 1);
+    const confirmed = this.invitations.filter(i => i.status === 'CONFIRMED').length;
+    const pending = this.invitations.filter(i => i.status === 'PENDING').length;
+    const cancelled = this.invitations.filter(i => i.status === 'CANCELLED').length;
+    const waitlist = this.invitations.filter(i => i.status === 'WAITLIST').length;
+
+    const pc = (n: number) => Math.round((n / total) * 100);
+    const a = pc(confirmed);
+    const b = a + pc(pending);
+    const c = b + pc(cancelled);
+    const d = 100; // waitlist reste
+
+    // Couleurs cohérentes avec SCSS
+    return `conic-gradient(#22c55e 0% ${a}%, #f59e0b ${a}% ${b}%, #ef4444 ${b}% ${c}%, #06b6d4 ${c}% ${d}%)`;
   }
 
   async logout() {

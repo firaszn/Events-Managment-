@@ -1,60 +1,88 @@
-<div class="profile-container">
-  <div class="form-container">
-    <h2>Mon Profil</h2>
-    
-    <div *ngIf="isLoading" class="loading-spinner">
-      <mat-spinner diameter="40"></mat-spinner>
+<div class="profile-wrapper">
+  <div class="profile-hero">
+    <div class="avatar" [class.image]="avatarPreviewUrl" [style.background-image]="avatarPreviewUrl ? 'url(' + avatarPreviewUrl + ')' : null">
+      <span *ngIf="!avatarPreviewUrl">{{ (profileForm.value.firstName || 'U').charAt(0) }}{{ (profileForm.value.lastName || '').charAt(0) }}</span>
+      <div class="avatar-actions">
+        <label class="upload-btn">
+          <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
+          <i class="fas fa-camera"></i>
+        </label>
+        <button type="button" class="remove-btn" *ngIf="avatarPreviewUrl" (click)="removeAvatar()"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="meta">
+      <h1>{{ profileForm.value.firstName || 'Votre' }} {{ profileForm.value.lastName || 'profil' }}</h1>
+      <p>Gérez vos informations personnelles et la sécurité de votre compte</p>
+      <div class="quick-badges">
+        <span class="badge"><i class="fas fa-shield-alt"></i> Sécurisé</span>
+        <span class="badge"><i class="fas fa-envelope"></i> {{ profileForm.value.email || 'email@domaine.com' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <div class="card glass">
+      <h2>Mon Profil</h2>
+      <div *ngIf="isLoading" class="loading-spinner">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="grid-2">
+        <mat-form-field appearance="outline">
+          <mat-label>Prénom</mat-label>
+          <input matInput formControlName="firstName" required>
+          <mat-error *ngIf="profileForm.get('firstName')?.errors?.['required']">Le prénom est requis</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nom</mat-label>
+          <input matInput formControlName="lastName" required>
+          <mat-error *ngIf="profileForm.get('lastName')?.errors?.['required']">Le nom est requis</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" required>
+          <mat-error *ngIf="profileForm.get('email')?.errors?.['required']">L'email est requis</mat-error>
+          <mat-error *ngIf="profileForm.get('email')?.errors?.['email']">Veuillez entrer un email valide</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Mot de passe (facultatif)</mat-label>
+          <input matInput formControlName="password" type="password">
+          <mat-hint>Laissez vide pour conserver votre mot de passe actuel</mat-hint>
+        </mat-form-field>
+        <div class="strength-meter full">
+          <div class="bar" [style.width.%]="passwordStrength * 25"></div>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Téléphone</mat-label>
+          <input matInput formControlName="phoneNumber">
+        </mat-form-field>
+
+        <div class="actions full">
+          <button mat-raised-button color="primary" type="submit" [disabled]="!profileForm.valid || isSaving">
+            <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+            <span *ngIf="!isSaving">Enregistrer</span>
+          </button>
+          <button mat-stroked-button type="button" (click)="profileForm.reset(profileForm.value)">
+            Réinitialiser
+          </button>
+        </div>
+      </form>
     </div>
 
-    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading">
-      <mat-form-field appearance="outline">
-        <mat-label>Prénom</mat-label>
-        <input matInput formControlName="firstName" required>
-        <mat-error *ngIf="profileForm.get('firstName')?.errors?.['required']">
-          Le prénom est requis
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Nom</mat-label>
-        <input matInput formControlName="lastName" required>
-        <mat-error *ngIf="profileForm.get('lastName')?.errors?.['required']">
-          Le nom est requis
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
-        <input matInput formControlName="email" type="email" required>
-        <mat-error *ngIf="profileForm.get('email')?.errors?.['required']">
-          L'email est requis
-        </mat-error>
-        <mat-error *ngIf="profileForm.get('email')?.errors?.['email']">
-          Veuillez entrer un email valide
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Mot de passe (facultatif)</mat-label>
-        <input matInput formControlName="password" type="password">
-        <mat-hint>Laissez vide pour conserver votre mot de passe actuel</mat-hint>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Téléphone</mat-label>
-        <input matInput formControlName="phoneNumber">
-      </mat-form-field>
-
-      <div class="button-container">
-        <button 
-          mat-raised-button 
-          color="primary" 
-          type="submit" 
-          [disabled]="!profileForm.valid || isSaving">
-          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
-          <span *ngIf="!isSaving">Enregistrer les modifications</span>
-        </button>
-      </div>
-    </form>
+    <div class="card side glass">
+      <h3>Sécurité rapide</h3>
+      <ul class="quick-list">
+        <li><i class="fas fa-key"></i> Mettez à jour votre mot de passe régulièrement</li>
+        <li><i class="fas fa-shield-virus"></i> Activez l’authentification forte (si dispo)</li>
+        <li><i class="fas fa-user-check"></i> Vérifiez vos informations</li>
+      </ul>
+      <div class="divider"></div>
+      <h3>Historique</h3>
+      <p class="history-line"><i class="fas fa-history"></i> Dernière mise à jour: <strong>{{ lastUpdated || '—' }}</strong></p>
+    </div>
   </div>
 </div>

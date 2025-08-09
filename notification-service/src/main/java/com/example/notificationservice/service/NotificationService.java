@@ -11,13 +11,15 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class NotificationService {
     
-    private final EmailService emailService;
+    private final EmailRetryService emailRetryService;
+    private final KafkaRetryService kafkaRetryService;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "${kafka.topics.invitation-responded}")
@@ -32,15 +34,28 @@ public class NotificationService {
             // Construire le contenu de l'email
             String emailContent = buildEmailContent(notification);
 
-            // Envoyer l'email de confirmation
-            emailService.sendEmail(
+            // Envoyer l'email de confirmation avec retry
+            CompletableFuture<Void> emailFuture = emailRetryService.sendEmailWithRetry(
                 notification.getUserEmail(),
                 "Confirmation de votre inscription à " + notification.getEventTitle(),
                 emailContent
             );
 
+            // Gérer le résultat de l'envoi
+            emailFuture.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("Échec de l'envoi d'email de confirmation pour : {}", notification.getUserEmail(), throwable);
+                    // Optionnel : Envoyer vers un topic de dead letter queue
+                    sendToDeadLetterQueue("invitation-responded", message, throwable);
+                } else {
+                    log.info("Email de confirmation envoyé avec succès à : {}", notification.getUserEmail());
+                }
+            });
+
         } catch (Exception e) {
             log.error("Erreur lors du traitement de la notification", e);
+            // Envoyer vers dead letter queue
+            sendToDeadLetterQueue("invitation-responded", message, e);
         }
     }
 
@@ -51,8 +66,7 @@ public class NotificationService {
             
             EventReminderMessage reminderMessage = objectMapper.readValue(message, EventReminderMessage.class);
             
-            // Envoyer l'email de rappel à tous les participants
-            for (String participantEmail : reminderMessage.getParticipantEmails()) {
+            // Préparer le contenu de l'email
                 String subject = String.format("Rappel - %s commence dans 1 heure", reminderMessage.getEventTitle());
                 String body = String.format(
                     "Bonjour,\n\n" +
@@ -69,12 +83,25 @@ public class NotificationService {
                     reminderMessage.getEventDescription() != null ? reminderMessage.getEventDescription() : "Aucune description"
                 );
                 
-                emailService.sendEmail(participantEmail, subject, body);
-                log.info("Email de rappel envoyé à {}", participantEmail);
+            // Envoyer en batch avec retry
+            String[] participantEmails = reminderMessage.getParticipantEmails().toArray(new String[0]);
+            CompletableFuture<Void> batchFuture = emailRetryService.sendBatchEmailsWithRetry(
+                participantEmails, subject, body
+            );
+            
+            batchFuture.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("Échec de l'envoi en batch des rappels pour l'événement : {}", reminderMessage.getEventTitle(), throwable);
+                    sendToDeadLetterQueue("event-reminder", message, throwable);
+                } else {
+                    log.info("Batch de {} emails de rappel envoyé avec succès pour l'événement : {}", 
+                            participantEmails.length, reminderMessage.getEventTitle());
             }
+            });
             
         } catch (Exception e) {
             log.error("Erreur lors du traitement du rappel d'événement: {}", e.getMessage(), e);
+            sendToDeadLetterQueue("event-reminder", message, e);
         }
     }
 
@@ -107,11 +134,23 @@ public class NotificationService {
                     waitlistMessage.getExpiresAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")) : "24 heures"
             );
             
-            emailService.sendEmail(waitlistMessage.getUserEmail(), subject, body);
-            log.info("Email de notification de liste d'attente envoyé à {}", waitlistMessage.getUserEmail());
+            // Envoyer avec retry
+            CompletableFuture<Void> emailFuture = emailRetryService.sendEmailWithRetry(
+                waitlistMessage.getUserEmail(), subject, body
+            );
+            
+            emailFuture.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("Échec de l'envoi d'email de liste d'attente pour : {}", waitlistMessage.getUserEmail(), throwable);
+                    sendToDeadLetterQueue("waitlist-notification", message, throwable);
+                } else {
+                    log.info("Email de notification de liste d'attente envoyé avec succès à : {}", waitlistMessage.getUserEmail());
+                }
+            });
             
         } catch (Exception e) {
             log.error("Erreur lors du traitement de la notification de liste d'attente: {}", e.getMessage(), e);
+            sendToDeadLetterQueue("waitlist-notification", message, e);
         }
     }
 
@@ -145,11 +184,52 @@ public class NotificationService {
                 seatInfo
             );
             
-            emailService.sendEmail(promotionMessage.getUserEmail(), subject, body);
-            log.info("Email de confirmation de promotion envoyé à {}", promotionMessage.getUserEmail());
+            // Envoyer avec retry
+            CompletableFuture<Void> emailFuture = emailRetryService.sendEmailWithRetry(
+                promotionMessage.getUserEmail(), subject, body
+            );
+            
+            emailFuture.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("Échec de l'envoi d'email de promotion pour : {}", promotionMessage.getUserEmail(), throwable);
+                    sendToDeadLetterQueue("waitlist-promotion", message, throwable);
+                } else {
+                    log.info("Email de confirmation de promotion envoyé avec succès à : {}", promotionMessage.getUserEmail());
+                }
+            });
             
         } catch (Exception e) {
             log.error("Erreur lors du traitement de la notification de promotion: {}", e.getMessage(), e);
+            sendToDeadLetterQueue("waitlist-promotion", message, e);
+        }
+    }
+
+    /**
+     * Envoyer un message vers la dead letter queue en cas d'échec
+     */
+    private void sendToDeadLetterQueue(String originalTopic, String originalMessage, Throwable error) {
+        try {
+            String deadLetterMessage = String.format(
+                "{\"originalTopic\":\"%s\",\"originalMessage\":%s,\"error\":\"%s\",\"timestamp\":\"%s\"}",
+                originalTopic,
+                originalMessage,
+                error.getMessage(),
+                java.time.LocalDateTime.now()
+            );
+            
+            CompletableFuture<Void> dlqFuture = kafkaRetryService.sendMessageWithRetry(
+                "notification.dlq", deadLetterMessage
+            ).thenAccept(result -> {
+                log.info("Message envoyé vers la dead letter queue pour le topic : {}", originalTopic);
+            });
+            
+            dlqFuture.exceptionally(throwable -> {
+                log.error("Échec de l'envoi vers la dead letter queue pour le topic : {}", originalTopic, throwable);
+                return null;
+            });
+            
+        } catch (Exception e) {
+            log.error("Erreur lors de l'envoi vers la dead letter queue", e);
         }
     }
 

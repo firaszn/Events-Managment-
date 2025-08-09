@@ -3,19 +3,14 @@
       <!-- Logo / Nom de l'application -->
       <div class="app-logo" routerLink="/home">
         <span>Gestion evenements</span>
+        <div class="pulse-dot" aria-hidden="true"></div>
       </div>
 
       <!-- Liens de navigation -->
       <nav class="nav-links" *ngIf="isLoggedIn">
-        <a mat-button routerLink="/home" routerLinkActive="active">
-          <span>Accueil</span>
-        </a>
-        <a mat-button routerLink="/events" routerLinkActive="active">
-          <span>Événements</span>
-        </a>
-        <a mat-button routerLink="/profile" routerLinkActive="active" *ngIf="userProfile">
-          <span>Profil</span>
-        </a>
+        <a mat-button routerLink="/home" routerLinkActive="active"><i class="fas fa-home"></i><span>Accueil</span></a>
+        <a mat-button routerLink="/events" routerLinkActive="active"><i class="fas fa-calendar-alt"></i><span>Événements</span></a>
+        <a mat-button routerLink="/profile" routerLinkActive="active" *ngIf="userProfile"><i class="fas fa-user"></i><span>Profil</span></a>
       </nav>
 
       <!-- Section utilisateur -->
@@ -27,16 +22,11 @@
 
         <!-- Non connecté -->
         <div *ngIf="!isLoggedIn && !isLoading" class="auth-buttons">
-          <button mat-raised-button 
-                  color="accent"
-                  (click)="login()">
-            <span>Connexion</span>
+          <button mat-raised-button color="accent" (click)="login()" class="btn-login">
+            <i class="fas fa-sign-in-alt"></i><span>Connexion</span>
           </button>
-          <button mat-stroked-button 
-                  color="accent"
-                  routerLink="/register"
-                  class="register-button">
-            <span>S'inscrire</span>
+          <button mat-stroked-button color="accent" routerLink="/register" class="register-button btn-register">
+            <i class="fas fa-user-plus"></i><span>S'inscrire</span>
           </button>
         </div>
 
@@ -44,7 +34,7 @@
         <div *ngIf="isLoggedIn && userProfile" class="user-info">
           <span class="welcome-text">Bonjour, {{ userName }}</span>
           <button mat-button (click)="logout()" class="logout-button" >
-            <span>Déconnexion</span>
+            <i class="fas fa-power-off"></i><span>Déconnexion</span>
           </button>
         </div>
       </div>

@@ -140,7 +140,20 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # 8. Prometheus (Monitoring)
+#  # 8. Frontend (Angular Application)
+#  frontend:
+#    build: ./frontend
+#    container_name: frontend
+#    ports:
+#      - "80:80"
+#    depends_on:
+#      - api-gateway
+#    networks:
+#      - microservices-network
+#    extra_hosts:
+#      - "host.docker.internal:host-gateway"
+
+  # 9. Prometheus (Monitoring)
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -166,7 +179,7 @@ services:
       - notification-service
       - api-gateway
 
-  # 9. Grafana (Visualisation)
+  # 10. Grafana (Visualisation)
   grafana:
     image: grafana/grafana:latest
     container_name: grafana

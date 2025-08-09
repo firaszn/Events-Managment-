@@ -1,0 +1,130 @@
+@startuml Event Management Use Case Diagram
+
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+    FontSize 12
+    FontColor Black
+}
+skinparam package {
+    BackgroundColor LightYellow
+    BorderColor DarkBlue
+    FontSize 14
+    FontColor DarkBlue
+}
+skinparam actor {
+    FontSize 14
+    FontColor DarkBlue
+}
+skinparam arrow {
+    Color DarkBlue
+    FontSize 10
+}
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor DarkBlue
+    FontSize 10
+}
+
+' Paramètres pour une image plus grande et claire
+skinparam dpi 300
+skinparam maxMessageSize 150
+skinparam wrapWidth 200
+
+title <size:16><b>Diagramme de Cas d'Utilisation - Application d'Organisation d'Événements</b></size>
+
+' Acteurs avec affichage vertical
+actor "Utilisateur" as User
+actor "Organisateur" as Organizer
+actor "Administrateur" as Admin
+
+' Organisation verticale des packages avec plus d'espace
+package "Gestion des Utilisateurs" {
+    usecase "S'inscrire" as Register
+    usecase "Se connecter" as Login
+    usecase "Gérer le profil" as ManageProfile
+}
+
+package "Gestion des Événements" {
+    usecase "Créer un événement" as CreateEvent
+    usecase "Modifier un événement" as EditEvent
+    usecase "Consulter les événements" as ViewEvents
+    usecase "Gérer la capacité" as ManageCapacity
+}
+
+package "Gestion des Inscriptions" {
+    usecase "S'inscrire à un événement" as RegisterToEvent
+    usecase "Annuler une inscription" as CancelRegistration
+    usecase "Sélectionner une place" as SelectSeat
+}
+
+package "Liste d'Attente" {
+    usecase "Rejoindre la liste d'attente" as JoinWaitlist
+    usecase "Confirmer une place" as ConfirmWaitlistSpot
+    usecase "Consulter sa position" as ViewWaitlistPosition
+}
+
+package "Gestion des Invitations" {
+    usecase "Inviter un participant" as InviteParticipant
+    usecase "Accepter une invitation" as AcceptInvitation
+    usecase "Consulter les invitations" as ViewInvitations
+}
+
+package "Notifications" {
+    usecase "Recevoir une confirmation" as ReceiveConfirmation
+    usecase "Recevoir un rappel" as ReceiveReminder
+    usecase "Recevoir une notification" as ReceiveNotification
+}
+
+package "Administration" {
+    usecase "Gérer les utilisateurs" as ManageUsers
+    usecase "Consulter les statistiques" as ViewStatistics
+    usecase "Gérer les configurations" as ManageConfigurations
+}
+
+' Relations Utilisateur (affichage vertical)
+User --> Register
+User --> Login
+User --> ManageProfile
+User --> ViewEvents
+User --> RegisterToEvent
+User --> CancelRegistration
+User --> SelectSeat
+User --> JoinWaitlist
+User --> ConfirmWaitlistSpot
+User --> ViewWaitlistPosition
+User --> ViewInvitations
+User --> AcceptInvitation
+User --> ReceiveConfirmation
+User --> ReceiveReminder
+User --> ReceiveNotification
+
+' Relations Organisateur (affichage vertical)
+Organizer --> CreateEvent
+Organizer --> EditEvent
+Organizer --> ManageCapacity
+Organizer --> InviteParticipant
+Organizer --> ViewStatistics
+
+' Relations Administrateur (affichage vertical)
+Admin --> ManageUsers
+Admin --> ViewStatistics
+Admin --> ManageConfigurations
+
+' Relations d'inclusion avec flèches plus visibles
+RegisterToEvent ..> SelectSeat : <<include>>
+ConfirmWaitlistSpot ..> RegisterToEvent : <<include>>
+CreateEvent ..> ManageCapacity : <<include>>
+
+' Layout pour améliorer l'affichage vertical et l'espacement
+left to right direction
+
+' Notes pour clarifier les rôles
+note right of User : Utilisateur standard\nPeut s'inscrire, consulter\ndes événements et gérer\nses inscriptions
+note right of Organizer : Organisateur d'événements\nPeut créer, modifier\ndes événements et\ninviter des participants
+note right of Admin : Administrateur système\nGère les utilisateurs,\nconfigurations et\nstatistiques
+
+@enduml 

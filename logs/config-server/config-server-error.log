@@ -1,0 +1,28 @@
+2025-07-30 09:49:37.591 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Invalid config server configuration.
+
+Action:
+
+If you are using the git profile, you need to set a Git URI in your configuration.  If you have set spring.cloud.config.server.bootstrap=true, you need to use a composite configuration.
+
+2025-07-30 09:51:38.974 [main] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Invalid config server configuration.
+
+Action:
+
+If you are using the git profile, you need to set a Git URI in your configuration.  If you have set spring.cloud.config.server.bootstrap=true, you need to use a composite configuration.
+
